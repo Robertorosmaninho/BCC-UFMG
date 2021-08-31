@@ -238,7 +238,6 @@ def read():
 	for idx, c in enumerate(C):
 		SIMPLEX[0][idx] = c
 		A[0][idx] = c
-	#print()
 
 	# Identidade das variáveis de folga
 	for i in range(1, N+M-1):
@@ -261,9 +260,6 @@ def read():
 	for i in range(1,N+M-1):	
 		SIMPLEX[i][-1] = B[i-1]
 
-	#print(np.array(A))
-	
-
 	N = N + M - 2 
 
 def solve():
@@ -272,35 +268,10 @@ def solve():
 	else:
 		solve_not_fpi()
 
-def check_capacidades(capacidades, x):
-	#print("cap: ", capacidades)
-	#print("x", x)
-	for i in range(len(capacidades)):
-		if x[i] > capacidades[i]:
-			return False
-	return True
-
-def check_min_cut_value(capacidades, incidence_matrix, valor_objetivo, y):
-	min_cut_value = 0
-	for aresta in range(incidence_matrix.shape[1]):
-		count = 0
-		for vertice in range(incidence_matrix.shape[0]):
-			if (y[vertice] == 1 and incidence_matrix[vertice, aresta] == -1) or (y[vertice] == 0 and incidence_matrix[vertice, aresta] == 1):
-				count += 1
-		if count == 2:
-			min_cut_value += capacidades[aresta]
-	
-	if min_cut_value == valor_objetivo:
-		return True
-	else:
-		return False
-
 if __name__ == '__main__':
 	read()
 	solve()
 	v_set = [1] + VERO[:N_rows-2] + [0]
 	sol = SOLUCAO
 	print(*v_set)
-	#print(check_capacidades(CAPACIDADES,sol))
-	#print(check_min_cut_value(CAPACIDADES, np.array(A), FN_OTIMO, v_set))
 
