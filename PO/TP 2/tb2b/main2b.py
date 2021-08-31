@@ -23,16 +23,17 @@ def setCoverPrimalDual(n, m, c, a):
         cover_sets[cover_idx] = 1
 
 		# Identifica os elementos já cobertos
-        covered_vertex = list(np.where(a_t[cover_idx] == 1)[0])
-        for vertex in covered_vertex: cover[vertex] = 1
+        covered_v = list(np.where(a_t[cover_idx] == 1)[0])
+        for v in covered_v: cover[v] = 1
 			
 		# Reduz os valores de c pela restrição igualada
         equal = list(np.where(np.array(a[i]) == 1)[0])
         for x in equal: c [x] -= dual_sol[i]
 
         # Para evitar conflitos a solução encontrada vira infinito
-        c = [x if x > 0 else np.Inf for x in c]
-        
+        for x in c: 
+            if x <= 0: x = float('inf')
+
     return dual_sol, cover_sets
 
 def read():
