@@ -136,9 +136,7 @@ class	: CLASS TYPEID '{' '}' ';' {
 };
 
 /* Feature list may be empty, but no empty features in list. */
-feature_list
-  : feature
-  {
+feature_list : feature {
     $$ = single_Features($1);
   }
   | feature_list feature
