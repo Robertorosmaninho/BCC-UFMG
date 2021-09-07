@@ -100,7 +100,6 @@ int omerrs = 0;               /* number of errors in lexing and parsing */
 %nonassoc LE '<' '=' 
 %left NOT
 %right ASSIGN
-//%left '('
 
 %%
 program : class_list { 
@@ -239,11 +238,11 @@ expression_list : expression {
   $$ = append_Expressions($1, single_Expressions($3));
 };
 
-expression_block : expression { // TODO: Verificar se n seria expression ;
+expression_block : expression ';'{ // TODO: Verificar se n seria expression ;
   $$ = single_Expressions($1);
 }
-| expression_block ';' expression ';' {
-    $$ = append_Expressions($1, single_Expressions($3));
+| expression_block expression ';' {
+    $$ = append_Expressions($1, single_Expressions($2));
 }
 | expression_block ';' error ';' ;
 
@@ -269,9 +268,20 @@ while_expression : WHILE expression LOOP expression POOL {
 dispatch_expression : expression '.' OBJECTID '(' expression_list ')' {
   $$ = dispatch($1, $3, $5);
 }
+| OBJECTID '(' ')' {
+  Entry *self = idtable.add_string("self");
+  $$ = dispatch(object(self), $1, nil_Expressions());
+}
 | OBJECTID '(' expression_list ')' {
   Entry *self = idtable.add_string("self");
   $$ = dispatch(object(self), $1, $3);
+}
+| expression '.' OBJECTID '(' ')' {
+  $$ = dispatch($1, $3, nil_Expressions());
+}
+
+| expression '@' TYPEID '.' OBJECTID '(' ')' {
+  $$ = static_dispatch($1, $3, $5, nil_Expressions());
 }
 | expression '@' TYPEID '.' OBJECTID '(' expression_list ')' {
   $$ = static_dispatch($1, $3, $5, $7);
@@ -297,12 +307,21 @@ let_expression
 | LET OBJECTID ':' TYPEID ASSIGN expression ',' let_expression {
   $$ = let($2, $4, $6, $8);
 }
-//| LET OBJECTID ':' TYPEID ',' let_expression IN expression {
-//  $$ = let($2, $4, $6, $8)
-//}
+| OBJECTID ':' TYPEID ASSIGN expression IN expression { //',' let_expression IN expression {
+  $$ = let($1, $3, $5, $7);
+}
+| OBJECTID ':' TYPEID IN expression {
+  $$ = let($1, $3, no_expr(), $5);
+}
+| OBJECTID ':' TYPEID ',' let_expression {
+  $$ = let($1, $3, no_expr(), $5);
+}
+| OBJECTID ':' TYPEID ASSIGN expression ',' let_expression {
+  $$ = let($1, $3, $5, $7);
+}
 | LET error ',' let_expression {
   $$ = $4;
-}
+};
 
 /* end of grammar */
 %%
