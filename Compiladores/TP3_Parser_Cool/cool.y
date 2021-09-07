@@ -227,9 +227,9 @@ expression : INT_CONST {
 | while_expression
 | case_expression
 | let_expression
-//| ERROR expression {
-//  $$ = $2;
-//};
+| ERROR expression {
+  $$ = $2;
+};
 ;
 expression_list : expression {
   $$ = single_Expressions($1);
