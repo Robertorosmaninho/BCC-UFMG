@@ -132,7 +132,7 @@ class	: CLASS TYPEID '{' '}' ';' {
 | CLASS TYPEID INHERITS TYPEID '{' feature_list '}' ';' { 
   $$ = class_($2, $4, $6, stringtable.add_string(curr_filename)); 
 } 
-| CLASS ERROR ';' class {
+| CLASS error ';' class {
   $$ = $4;
 };
 
@@ -229,9 +229,6 @@ expression : INT_CONST {
 | while_expression
 | case_expression
 | let_expression
-| ERROR expression {
-  $$ = $2;
-};
 ;
 expression_list : expression {
   $$ = single_Expressions($1);
@@ -246,7 +243,10 @@ expression_block : expression ';'{ // TODO: Verificar se n seria expression ;
 | expression_block expression ';' {
     $$ = append_Expressions($1, single_Expressions($2));
 }
-| expression_block ';' ERROR ';' ;
+| expression_block ';' error {
+  $$ = $1;
+}
+;
 
 case_expression : CASE expression OF case_branches ESAC {
   $$ = typcase($2, $4);
@@ -289,11 +289,11 @@ dispatch_expression : expression '.' OBJECTID '(' expression_list ')' {
   $$ = static_dispatch($1, $3, $5, $7);
 };
 
-cond_expression : IF expression THEN expression FI { // TODO: Isso aqui é mesmo necessário?
-  $$ = cond($2, $4, no_expr());
-}
-| IF expression THEN expression ELSE expression FI {
+cond_expression : IF expression THEN expression ELSE expression FI {
   $$ = cond($2, $4, $6);
+}
+| IF expression THEN expression ELSE error FI { 
+  $$ = $2;
 };
 
 let_expression 
@@ -320,9 +320,6 @@ let_expression
 }
 | OBJECTID ':' TYPEID ASSIGN expression ',' let_expression {
   $$ = let($1, $3, $5, $7);
-}
-| LET ERROR ',' let_expression {
-  $$ = $4;
 };
 
 /* end of grammar */
