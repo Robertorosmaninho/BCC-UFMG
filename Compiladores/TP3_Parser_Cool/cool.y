@@ -91,15 +91,17 @@ int omerrs = 0;               /* number of errors in lexing and parsing */
 %type <feature> feature
 
 /* Precedence declarations go here. */
-%left '.'
-%left '@'
-%left '~'
-%left ISVOID
-%left '*' '/'
-%left '+' '-' 
-%nonassoc LE '<' '=' 
-%left NOT
+%left LET
 %right ASSIGN
+%left NOT
+%nonassoc LE '<' '=' 
+%left '+' '-' 
+%left '*' '/'
+%left ISVOID
+%left '~'
+%left '@'
+%left '.'
+%left '(' ')'
 
 %%
 program : class_list { 
@@ -130,7 +132,7 @@ class	: CLASS TYPEID '{' '}' ';' {
 | CLASS TYPEID INHERITS TYPEID '{' feature_list '}' ';' { 
   $$ = class_($2, $4, $6, stringtable.add_string(curr_filename)); 
 } 
-| CLASS error ';' class {
+| CLASS ERROR ';' class {
   $$ = $4;
 };
 
@@ -244,7 +246,7 @@ expression_block : expression ';'{ // TODO: Verificar se n seria expression ;
 | expression_block expression ';' {
     $$ = append_Expressions($1, single_Expressions($2));
 }
-| expression_block ';' error ';' ;
+| expression_block ';' ERROR ';' ;
 
 case_expression : CASE expression OF case_branches ESAC {
   $$ = typcase($2, $4);
@@ -295,10 +297,10 @@ cond_expression : IF expression THEN expression FI { // TODO: Isso aqui é mesmo
 };
 
 let_expression 
-  : LET OBJECTID ':' TYPEID ASSIGN expression IN expression %prec LET {
+  : LET OBJECTID ':' TYPEID ASSIGN expression IN expression %prec ASSIGN {
   $$ = let($2, $4, $6, $8);
 }
-| LET OBJECTID ':' TYPEID IN expression {
+| LET OBJECTID ':' TYPEID IN expression %prec ASSIGN {
   $$ = let($2, $4, no_expr(), $6);
 }
 | LET OBJECTID ':' TYPEID ',' let_expression {
@@ -307,10 +309,10 @@ let_expression
 | LET OBJECTID ':' TYPEID ASSIGN expression ',' let_expression {
   $$ = let($2, $4, $6, $8);
 }
-| OBJECTID ':' TYPEID ASSIGN expression IN expression { //',' let_expression IN expression {
+| OBJECTID ':' TYPEID ASSIGN expression IN expression %prec ASSIGN {
   $$ = let($1, $3, $5, $7);
 }
-| OBJECTID ':' TYPEID IN expression {
+| OBJECTID ':' TYPEID IN expression %prec ASSIGN {
   $$ = let($1, $3, no_expr(), $5);
 }
 | OBJECTID ':' TYPEID ',' let_expression {
@@ -319,7 +321,7 @@ let_expression
 | OBJECTID ':' TYPEID ASSIGN expression ',' let_expression {
   $$ = let($1, $3, $5, $7);
 }
-| LET error ',' let_expression {
+| LET ERROR ',' let_expression {
   $$ = $4;
 };
 
