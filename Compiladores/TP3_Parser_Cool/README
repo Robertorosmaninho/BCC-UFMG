@@ -141,7 +141,7 @@ representada pela Figura 1 e a precedência especificada no item 11 do documento
 Foi necessário utilizar a ordem inversa de precedência dos operadores para gerar o 
 resultado esperado e foi incluída uma instrução para capturar os erros a cada terminador.
 A única observação a ser feita no arquivo cool.output é que o token ERROR não foi implementado 
-conforme requisitado na especificação do trabalho, porque o suporte para todos os outros não 
+conforme requisitado na especificação do trabalho.Além disso, o suporte para todos os outros não 
 terminais foi implementado sem conflitos no parser. Dessa forma o token nunca é utilizado.
 O analisador sintático implementado foi testado primeiramente utilizando os exemplos fornecidos, 
 que foram exemplos sintaticamente corretos, e comparando a saída com a saída do parser do Cool.
