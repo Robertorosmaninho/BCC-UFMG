@@ -31,23 +31,52 @@ void* client_thread(void* data) {
   printf("[log] connection from %s\n", caddrstr);
 
   Pokedex pokedex = startPokedex();
+  bool connection = true;
 
-  while (1) {
-    char buf[BUFSZ];
+  while (connection) {
+    char buf[BUFSZ], buf_temp[BUFSZ];
     memset(buf, 0, BUFSZ);
-    size_t count = recv(cdata->csock, buf, BUFSZ - 1, 0);
-    printf("[msg] %s, %d bytes: %s\n", caddrstr, (int) count, buf);
+    
+    unsigned int total = 0;
+    size_t count = 0;
+    bool receive_completed = false;
+
+    while (!receive_completed) {
+      count = recv(cdata->csock, buf_temp, BUFSZ - 1, 0);
+      total += count;
+
+      for (int i = total - count, j = 0; i < total; i++, j++)
+        buf[i] = buf_temp[j];
+
+      if (count == 0) {
+        connection = false;
+        break;
+      }
+
+      for (int i = 0; i < total; i++) {
+        if (buf[i] == '\n') {
+          receive_completed = true;
+          break;
+        }
+      }
+
+      // printf("[debug] incomplete msg, waiting for '\\n'\n");
+      // printf("[debug] buf: %s\n", buf);
+    }
+    printf("[msg] %s, %d bytes: %s", caddrstr, (int) count, buf);
 
     char msg[BUFSZ] = "";
     if (selectCommand(buf, &pokedex, msg)) {
       deletePokedex(&pokedex);
       logexit("kill");
     }
-
-    count = send(cdata->csock, msg, strlen(msg) + 1, 0);
-    if (count != strlen(msg) + 1) {
+    // printf("Passou aqui!\n");
+    strcat(msg, "\n");
+    count = send(cdata->csock, msg, strlen(msg), 0);
+    if (count != strlen(msg)) {
       logexit("send");
     }
+    // printf("Passou aqui também!\n");
   }
   close(cdata->csock);
   pthread_exit(EXIT_SUCCESS);
@@ -105,9 +134,9 @@ int main(int argc, char** argv) {
     cdata->csock = csock;
     memcpy(&(cdata->storage), &cstorage, sizeof(cstorage));
 
-    // pthread_t tid;
+    pthread_t tid;
     client_thread(cdata);
-    // pthread_create(&tid, NULL, client_thread, cdata);
+    pthread_create(&tid, NULL, client_thread, cdata);
   }
 
   exit(EXIT_SUCCESS);

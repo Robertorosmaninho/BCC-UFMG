@@ -153,13 +153,12 @@ bool insertPokemon(Pokedex* pokedex, Pokemon pokemon) {
 // Lista os pokemons em uma unica string separados por espaço e com \n no final
 void listPokemon(Pokedex* pokedex, char* result) {
   if (pokedex->pokemon == NULL) {
-    sprintf(result, "< none");
+    sprintf(result, "none");
     return;
   }
 
   Pokemon temp = pokedex->pokemon;
-  sprintf(result, "< ");
-  strcat(result, temp->name);
+  sprintf(result, temp->name);
   temp = temp->next;
 
   while (temp != NULL) {
@@ -173,29 +172,28 @@ void addPokemon(char* command, Pokedex* pokedex, char* result) {
   char* tokens = strtok(command, " ");
 
   if (strlen(tokens) > 10) {
-    sprintf(result, "< invalid message");
+    sprintf(result, "invalid message");
     return;
   }
 
-  sprintf(result, "<");
   while (tokens != NULL) {
     Pokemon pokemon = cretePokemon(tokens);
 
     if (pokedex->size == 40) {
-      strcat(result, " limit exceeded");
+      strcat(result, "limit exceeded");
       return;
     }
 
     if (insertPokemon(pokedex, pokemon)) {
-      strcat(result, " ");
       strcat(result, tokens);
       strcat(result, " added");
     } else {
-      strcat(result, " ");
       strcat(result, tokens);
       strcat(result, " already exists");
     }
     tokens = strtok(NULL, " ");
+    if (tokens != NULL)
+      strcat(result, " ");
   }
 }
 
@@ -203,11 +201,10 @@ void removePokemon(char* command, Pokedex* pokedex, char* result) {
   char* tokens = strtok(command, " ");
 
   if (strlen(tokens) > 10) {
-    sprintf(result, "< invalid message");
+    sprintf(result, "invalid message");
     return;
   }
 
-  sprintf(result, "<");
   while (tokens != NULL) {
     if (findOnPokedex(pokedex, tokens)) {
       Pokemon current = pokedex->pokemon;
@@ -230,15 +227,15 @@ void removePokemon(char* command, Pokedex* pokedex, char* result) {
         }
       }
 
-      strcat(result, " ");
       strcat(result, tokens);
       strcat(result, " removed");
     } else {
-      strcat(result, " ");
       strcat(result, tokens);
-      strcat(result, "  does not exist");
+      strcat(result, " does not exist");
     }
     tokens = strtok(NULL, " ");
+    if (tokens != NULL)
+      strcat(result, " ");
   }
 }
 
@@ -248,7 +245,7 @@ void exchangePokemon(char* command, Pokedex* pokedex, char* result) {
   sprintf(pokemon1, "%s", tokens);
 
   if (strlen(pokemon1) > 10) {
-    sprintf(result, "< invalid message");
+    sprintf(result, "invalid message");
     return;
   }
 
@@ -263,7 +260,7 @@ void exchangePokemon(char* command, Pokedex* pokedex, char* result) {
   sprintf(pokemon2, "%s", tokens);
 
   if (strlen(pokemon2) > 10) {
-    sprintf(result, "< invalid message");
+    sprintf(result, "invalid message");
     return;
   }
 
@@ -291,7 +288,7 @@ int selectCommand(char* command, Pokedex* pokedex, char* result) {
   command = strtok(command, "\n");
   printf("command: %s\n", command);
   if (!stringValidator(command)) {
-    sprintf(result, "< invalid message");
+    sprintf(result, "invalid message");
     return 0;
   }
 
@@ -306,9 +303,9 @@ int selectCommand(char* command, Pokedex* pokedex, char* result) {
     listPokemon(pokedex, result);
     // printf("[debug] list: %s\n", result);
   } else {
+    printf("mismatch pattern\n");
     return -1;
   }
-
   return 0;
 }
 
@@ -341,7 +338,7 @@ bool findOnPokedex(Pokedex* pokedex, char* pokemonName) {
   Pokemon pokemon = pokedex->pokemon;
 
   while (pokemon != NULL) {
-    printf("[debug] comparing on find (%s ?= %s)\n", pokemon->name, pokemonName);
+    // printf("[debug] comparing on find (%s ?= %s)\n", pokemon->name, pokemonName);
     if (!strncmp(pokemonName, pokemon->name, strlen(pokemon->name)))
       return true;
     pokemon = pokemon->next;
@@ -352,10 +349,8 @@ bool findOnPokedex(Pokedex* pokedex, char* pokemonName) {
 
 bool stringValidator(char* command) {
   for (int i = 0; i < strlen(command); i++) {
-    if (command[i] >= 65 && command[i])
-      command[i] = tolower(command[i]);
-    else if ((command[i] >= 97 && command[i] <= 122) || command[i] == 32 ||
-             (command[i] >= 48 && command[i] <= 57))
+    if ((command[i] >= 97 && command[i] <= 122) || command[i] == 32 ||
+        (command[i] >= 48 && command[i] <= 57))
       continue;
     else
       return false;

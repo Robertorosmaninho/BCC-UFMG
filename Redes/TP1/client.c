@@ -52,25 +52,19 @@ int main(int argc, char** argv) {
     }
 
     memset(buf, 0, BUFSZ);
-    /*unsigned total = 0;
+    unsigned total = 0;
     while (1) {
-    count = recv(s, buf + total, BUFSZ - total, 0);*/
-    count = recv(s, buf, BUFSZ, 0);
-    if (count == 0) {
-      // Connection terminated.
-      // break;
-      logexit("Connection terminated.");
-    }
-    /*total += count;
-    if (count == 20) {
-      // success
-      puts("success");
-      break;
-    }
-    }
-     close(s);
+      count = recv(s, buf + total, BUFSZ - total, 0);
+      if (count == 0) {
+        // Connection terminated.
+        logexit("");
+        break;
+      }
+      total += count;
 
-    printf("received %u bytes\n", total);*/
+      if (buf[total] == '\0')
+        break;  // success
+    }
     puts(buf);
   }
 
