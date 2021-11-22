@@ -37,15 +37,13 @@ Pokedex startPokedex();
 bool insertPokemon(Pokedex* pokedex, Pokemon pokemon);
 
 // Lista os pokemons em uma unica string separados por espaço e com \n no final
-void showPokedex(Pokedex* pokedex, char* pokemons);
+void listPokemon(Pokedex* pokedex, char* pokemons);
 
 void addPokemon(char* command, Pokedex* pokedex, char* result);
 
 void removePokemon(char* command, Pokedex* pokedex, char* result);
 
 void exchangePokemon(char* command, Pokedex* pokedex, char* result);
-
-void listPokemon(Pokedex* pokedex);
 
 int selectCommand(char* command, Pokedex* pokedex, char* result);
 
@@ -54,3 +52,5 @@ void deletePokemon(Pokemon* pokemon);
 void deletePokedex(Pokedex* pokedex);
 
 void printList(Pokemon pokemon);
+
+bool findOnPokedex(Pokedex* pokedex, char* pokemonName);

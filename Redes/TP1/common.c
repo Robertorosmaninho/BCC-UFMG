@@ -150,7 +150,7 @@ bool insertPokemon(Pokedex* pokedex, Pokemon pokemon) {
 }
 
 // Lista os pokemons em uma unica string separados por espaço e com \n no final
-void showPokedex(Pokedex* pokedex, char* result) {
+void listPokemon(Pokedex* pokedex, char* result) {
   if (pokedex->pokemon == NULL) {
     sprintf(result, "< none");
     return;
@@ -193,13 +193,38 @@ void removePokemon(char* command, Pokedex* pokedex, char* result) {
 }
 
 void exchangePokemon(char* command, Pokedex* pokedex, char* result) {
-  printf("exchange Pokemon\n");
-}
+  char* tokens = strtok(command, " ");
+  char pokemon1[15];
+  sprintf(pokemon1, "%s", tokens);
 
-void listPokemon(Pokedex* pokedex) {
-  printf("vefore show: %s", pokedex->pokemon->name);
+  if (!findOnPokedex(pokedex, pokemon1)) {
+    sprintf(result, "%s", pokemon1);
+    strcat(result, " does not exist");
+    return;
+  }
 
-  // showPokedex(pokedex, pokemons);
+  tokens = strtok(NULL, " ");
+  char pokemon2[15];
+  sprintf(pokemon2, "%s", tokens);
+
+  if (findOnPokedex(pokedex, pokemon2)) {
+    sprintf(result, "%s", pokemon2);
+    strcat(result, " already exists");
+    return;
+  }
+
+  Pokemon temp = pokedex->pokemon;
+  while (temp != NULL) {
+    if (strncmp(temp->name, pokemon1, strlen(pokemon1)) == 0) {
+      sprintf(temp->name, pokemon2);
+      sprintf(result, "%s", pokemon1);
+      strcat(result, " exchanged");
+      return;
+    }
+    temp = temp->next;
+  }
+
+  logexit("exchange");
 }
 
 int selectCommand(char* command, Pokedex* pokedex, char* result) {
@@ -213,7 +238,7 @@ int selectCommand(char* command, Pokedex* pokedex, char* result) {
   else if (strncmp("exchange", command, 8) == 0)
     exchangePokemon(command + 9, pokedex, result);
   else if (strncmp("list", command, 4) == 0) {
-    showPokedex(pokedex, result);
+    listPokemon(pokedex, result);
     // printf("[debug] list: %s\n", result);
   } else if (strncmp("kill", command, 4) == 0)
     return -1;
@@ -246,4 +271,17 @@ void printList(Pokemon pokemon) {
     printf(" %s ", pokemon->name);
     pokemon = pokemon->next;
   }
+}
+
+bool findOnPokedex(Pokedex* pokedex, char* pokemonName) {
+  Pokemon pokemon = pokedex->pokemon;
+
+  while (pokemon != NULL) {
+    printf("[debug] comparing on find (%s ?= %s)\n", pokemon->name, pokemonName);
+    if (!strncmp(pokemonName, pokemon->name, strlen(pokemon->name)))
+      return true;
+    pokemon = pokemon->next;
+  }
+
+  return false;
 }
