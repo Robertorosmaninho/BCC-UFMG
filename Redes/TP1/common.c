@@ -172,6 +172,11 @@ void listPokemon(Pokedex* pokedex, char* result) {
 void addPokemon(char* command, Pokedex* pokedex, char* result) {
   char* tokens = strtok(command, " ");
 
+  if (strlen(tokens) > 10) {
+    sprintf(result, "< invalid message");
+    return;
+  }
+
   sprintf(result, "<");
   while (tokens != NULL) {
     Pokemon pokemon = cretePokemon(tokens);
@@ -196,6 +201,11 @@ void addPokemon(char* command, Pokedex* pokedex, char* result) {
 
 void removePokemon(char* command, Pokedex* pokedex, char* result) {
   char* tokens = strtok(command, " ");
+
+  if (strlen(tokens) > 10) {
+    sprintf(result, "< invalid message");
+    return;
+  }
 
   sprintf(result, "<");
   while (tokens != NULL) {
@@ -237,6 +247,11 @@ void exchangePokemon(char* command, Pokedex* pokedex, char* result) {
   char pokemon1[15];
   sprintf(pokemon1, "%s", tokens);
 
+  if (strlen(pokemon1) > 10) {
+    sprintf(result, "< invalid message");
+    return;
+  }
+
   if (!findOnPokedex(pokedex, pokemon1)) {
     sprintf(result, "%s", pokemon1);
     strcat(result, " does not exist");
@@ -246,6 +261,11 @@ void exchangePokemon(char* command, Pokedex* pokedex, char* result) {
   tokens = strtok(NULL, " ");
   char pokemon2[15];
   sprintf(pokemon2, "%s", tokens);
+
+  if (strlen(pokemon2) > 10) {
+    sprintf(result, "< invalid message");
+    return;
+  }
 
   if (findOnPokedex(pokedex, pokemon2)) {
     sprintf(result, "%s", pokemon2);
