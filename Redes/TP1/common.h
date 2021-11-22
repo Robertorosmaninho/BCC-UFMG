@@ -54,3 +54,5 @@ void deletePokedex(Pokedex* pokedex);
 void printList(Pokemon pokemon);
 
 bool findOnPokedex(Pokedex* pokedex, char* pokemonName);
+
+bool stringValidator(char* command);

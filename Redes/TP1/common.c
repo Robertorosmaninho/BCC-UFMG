@@ -1,5 +1,6 @@
 #include "common.h"
 
+#include <ctype.h>
 #include <inttypes.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -175,6 +176,11 @@ void addPokemon(char* command, Pokedex* pokedex, char* result) {
   while (tokens != NULL) {
     Pokemon pokemon = cretePokemon(tokens);
 
+    if (pokedex->size == 40) {
+      strcat(result, " limit exceeded");
+      return;
+    }
+
     if (insertPokemon(pokedex, pokemon)) {
       strcat(result, " ");
       strcat(result, tokens);
@@ -189,7 +195,41 @@ void addPokemon(char* command, Pokedex* pokedex, char* result) {
 }
 
 void removePokemon(char* command, Pokedex* pokedex, char* result) {
-  printf("remove Pokemon\n");
+  char* tokens = strtok(command, " ");
+
+  sprintf(result, "<");
+  while (tokens != NULL) {
+    if (findOnPokedex(pokedex, tokens)) {
+      Pokemon current = pokedex->pokemon;
+      Pokemon next = NULL;
+
+      // 1 da lista
+      if (!strncmp(tokens, current->name, strlen(current->name))) {
+        pokedex->pokemon = current->next;
+        free(current);
+      } else {
+        // 2 em diante
+        while (current->next != NULL) {
+          if (!strncmp(tokens, current->next->name, strlen(current->next->name))) {
+            next = current->next;
+            current->next = next->next;
+            free(next);
+            break;
+          }
+          current = current->next;
+        }
+      }
+
+      strcat(result, " ");
+      strcat(result, tokens);
+      strcat(result, " removed");
+    } else {
+      strcat(result, " ");
+      strcat(result, tokens);
+      strcat(result, "  does not exist");
+    }
+    tokens = strtok(NULL, " ");
+  }
 }
 
 void exchangePokemon(char* command, Pokedex* pokedex, char* result) {
@@ -229,6 +269,11 @@ void exchangePokemon(char* command, Pokedex* pokedex, char* result) {
 
 int selectCommand(char* command, Pokedex* pokedex, char* result) {
   command = strtok(command, "\n");
+  printf("command: %s\n", command);
+  if (!stringValidator(command)) {
+    sprintf(result, "< invalid message");
+    return 0;
+  }
 
   if (strncmp("add", command, 3) == 0) {
     addPokemon(command + 4, pokedex, result);
@@ -240,10 +285,9 @@ int selectCommand(char* command, Pokedex* pokedex, char* result) {
   else if (strncmp("list", command, 4) == 0) {
     listPokemon(pokedex, result);
     // printf("[debug] list: %s\n", result);
-  } else if (strncmp("kill", command, 4) == 0)
+  } else {
     return -1;
-  else
-    sprintf(result, "PatternMatch error!\n");
+  }
 
   return 0;
 }
@@ -284,4 +328,17 @@ bool findOnPokedex(Pokedex* pokedex, char* pokemonName) {
   }
 
   return false;
+}
+
+bool stringValidator(char* command) {
+  for (int i = 0; i < strlen(command); i++) {
+    if (command[i] >= 65 && command[i])
+      command[i] = tolower(command[i]);
+    else if ((command[i] >= 97 && command[i] <= 122) || command[i] == 32 ||
+             (command[i] >= 48 && command[i] <= 57))
+      continue;
+    else
+      return false;
+  }
+  return true;
 }

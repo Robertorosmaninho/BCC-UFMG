@@ -39,13 +39,10 @@ void* client_thread(void* data) {
     printf("[msg] %s, %d bytes: %s\n", caddrstr, (int) count, buf);
 
     char msg[BUFSZ] = "";
-    // printList(pokedex.pokemon);
     if (selectCommand(buf, &pokedex, msg)) {
       deletePokedex(&pokedex);
       logexit("kill");
     }
-    // sprintf(buf, "remote endpoint: %.1000s\n", caddrstr);
-    // count = send(cdata->csock, buf, strlen(buf) + 1, 0);
 
     count = send(cdata->csock, msg, strlen(msg) + 1, 0);
     if (count != strlen(msg) + 1) {
