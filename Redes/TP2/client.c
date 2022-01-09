@@ -23,24 +23,33 @@ int main(int argc, char** argv) {
     usage(argc, argv);
   }
 
-  struct sockaddr_storage storage;
-  if (0 != addrparse(argv[1], argv[2], &storage)) {
+  struct sockaddr_storage serverAddr;
+  if (0 != addrparse(argv[1], argv[2], &serverAddr)) {
     usage(argc, argv);
   }
 
   int s;
-  s = socket(storage.ss_family, SOCK_STREAM, 0);
+  s = socket(serverAddr.ss_family, SOCK_DGRAM, 0);
   if (s == -1) {
     logexit("socket");
   }
 
-  struct sockaddr* addr = (struct sockaddr*) (&storage);
-  if (0 != connect(s, addr, sizeof(storage))) {
+  struct sockaddr* addr = (struct sockaddr*) (&serverAddr);
+  if (0 != connect(s, addr, sizeof(serverAddr))) {
     logexit("connect");
   }
 
-  char addrstr[BUFSZ];
-  addrtostr(addr, addrstr, BUFSZ);
-
-  printf("connected to %s\n", addrstr);
+  // request to send datagram
+  // no need to specify server address in sendto
+  // connect stores the peers IP and port
+  char* message = "connected\n";
+  sendto(s, message, 1000, 0, (struct sockaddr*)NULL, sizeof(serverAddr));
+      
+  // waiting for response
+  char buf[BUFSZ];
+  recvfrom(s, buf, sizeof(buf), 0, (struct sockaddr*)NULL, NULL);
+  puts(buf);
+  
+  // close the descriptor
+  close(s);
 }
