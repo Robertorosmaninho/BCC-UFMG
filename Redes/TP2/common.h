@@ -4,8 +4,14 @@
 #include <stdbool.h>
 #include <stdlib.h>
 
+struct ServerSet {
+  struct sockaddr_storage serverAddr1;
+  struct sockaddr_storage serverAddr2;
+  struct sockaddr_storage serverAddr3;
+  struct sockaddr_storage serverAddr4;
+};
+
+typedef struct ServerSet ServerSet;
 void logexit(const char* msg);
 
-int addrparse(const char* addrstr, const char* portstr, struct sockaddr_storage* storage);
-
-int server_sockaddr_init(const char* proto, const char* portstr, struct sockaddr_storage* storage);
+int addrparse(const char* addrstr, uint16_t port, struct sockaddr_storage* storage);

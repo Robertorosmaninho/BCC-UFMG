@@ -18,38 +18,58 @@ void usage(int argc, char** argv) {
   exit(EXIT_FAILURE);
 }
 
-int main(int argc, char** argv) {
-  if (argc < 3) {
-    usage(argc, argv);
-  }
-
+struct sockaddr_storage connect_server(const char* addrStr, int port) {
   struct sockaddr_storage serverAddr;
-  if (0 != addrparse(argv[1], argv[2], &serverAddr)) {
-    usage(argc, argv);
+  memset(&serverAddr, 0, sizeof(serverAddr));
+
+  if (0 != addrparse(addrStr, (uint16_t) port, &serverAddr)) {
+    logexit("parse");
   }
 
-  int s;
-  s = socket(serverAddr.ss_family, SOCK_DGRAM, 0);
-  if (s == -1) {
+  int socketClient;
+  socketClient = socket(serverAddr.ss_family, SOCK_DGRAM, 0);
+  if (socketClient == -1) {
     logexit("socket");
   }
 
   struct sockaddr* addr = (struct sockaddr*) (&serverAddr);
-  if (0 != connect(s, addr, sizeof(serverAddr))) {
+  if (0 != connect(socketClient, addr, sizeof(serverAddr))) {
     logexit("connect");
   }
 
-  // request to send datagram
-  // no need to specify server address in sendto
-  // connect stores the peers IP and port
   char* message = "connected\n";
-  sendto(s, message, 1000, 0, (struct sockaddr*)NULL, sizeof(serverAddr));
-      
-  // waiting for response
-  char buf[BUFSZ];
-  recvfrom(s, buf, sizeof(buf), 0, (struct sockaddr*)NULL, NULL);
-  puts(buf);
+  sendto(socketClient, (const char*) message, strlen(message), 0, 
+        (const struct sockaddr*) &serverAddr, sizeof(serverAddr));
   
-  // close the descriptor
-  close(s);
+  char buffer[BUFSZ];
+  int len;
+  recvfrom(socketClient, (char*)buffer, sizeof(buffer), 0, 
+           (struct sockaddr*)&serverAddr,(socklen_t *) &len);
+
+  puts(buffer);
+  close(socketClient);
+  return serverAddr;
+}
+
+ServerSet set_servers(const char* addrStr, int port) {
+  ServerSet serverSet;
+  memset(&serverSet, 0, sizeof(serverSet));
+
+  serverSet.serverAddr1 = connect_server(addrStr, port);
+  serverSet.serverAddr2 = connect_server(addrStr, port+1);
+  serverSet.serverAddr2 = connect_server(addrStr, port+2);
+  serverSet.serverAddr3 = connect_server(addrStr, port+3);
+  
+  return serverSet;
+}
+
+int main(int argc, char** argv) {
+  if (argc < 3) {
+    usage(argc, argv);
+  }
+  
+  ServerSet serverSet = set_servers(argv[1], atoi(argv[2]));
+  
+
+  exit(EXIT_SUCCESS);
 }
