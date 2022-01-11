@@ -10,23 +10,12 @@
 #include <sys/types.h>
 
 #define BUFSZ 1024
-#define NUM_SOCKETS 4
 
 void usage(int argc, char** argv) {
   printf("usage: %s <v4|v6> <server port>\n", argv[0]);
   printf("example: %s v4 51511\n", argv[0]);
   exit(EXIT_FAILURE);
 }
-
-struct server_data {
-  int sock;
-  int path_num;
-  int port;
-  const char* protocol;
-  struct sockaddr* client;
-  socklen_t clientSize;
-  struct sockaddr_storage serverAddr;
-};
 
 int connect_server(int port) {
   int udpfd;

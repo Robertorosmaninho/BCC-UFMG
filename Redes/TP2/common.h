@@ -4,11 +4,11 @@
 #include <stdbool.h>
 #include <stdlib.h>
 
+#define NUM_SOCKETS 4
+
 struct ServerSet {
-  struct sockaddr_storage serverAddr1;
-  struct sockaddr_storage serverAddr2;
-  struct sockaddr_storage serverAddr3;
-  struct sockaddr_storage serverAddr4;
+  struct sockaddr_storage serverAddr[NUM_SOCKETS];
+  int socketClient[NUM_SOCKETS];
 };
 
 typedef struct ServerSet ServerSet;

@@ -17,7 +17,7 @@ int addrparse(const char* addrStr, uint16_t port, struct sockaddr_storage* serve
   if (addrStr == NULL || port == 0) {
     return -1;
   }
-
+  
   port = htons(port);  // host to network short
 
   struct in_addr inaddr4;  // 32-bit IP address
