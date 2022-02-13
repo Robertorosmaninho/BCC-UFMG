@@ -16,6 +16,29 @@ port = 59000
 exhibitors = []
 broadcasters = []
 
+def printExhibitorIds():
+    listIds = []
+    for exhibitor in exhibitors:
+        listIds.append(exhibitor.getId())
+    print("Exhibitors live: ", listIds)
+   
+def printBroadcasterIds():
+    listIds = []
+    for broadcaster in broadcasters:
+        listIds.append(broadcaster.getId())
+    print("Broadcastes live:", listIds)
+    
+def getPlanetList():
+    planetList = []
+    for exhibitor in exhibitors:
+        planetList.append(exhibitor.getPlanetName())
+    for broadcaster in broadcasters:
+        planetList.append(broadcaster.getPlanetName())
+    return planetList
+
+def printPlanetList():
+    print(getPlanetList())
+            
 def lookupList(elems, id):
     print('looking for id:', id)
     for elem in elems:
@@ -24,28 +47,33 @@ def lookupList(elems, id):
             return elem
     print("Couldn't find exhibitor id")
     
-def broadcast(message, exhibitor):
+def broadcast(message, sender):
     for exhibitorIt in exhibitors:
-        if exhibitorIt != exhibitor:
+        if exhibitorIt != sender:
             exhibitorIt.send(message)
 
 # Function to handle clients'connections
 
 def handle_client(client):
-    while True:
+    while client.isLive():
         try:
-            message = client.recv(1024)
+            printExhibitorIds()
+            printBroadcasterIds()
             client.printClient()
+            message = client.recv(1024)
+            print("Trying to eval")
             evalClientMessage(client, message)
-            #broadcast(message, client)
+            print("Finishing the eval")
         except:
-            if client.getRole() == 'exhibitor':
-                exhibitors.remove(client.getId())
-            elif client.getRole() == 'broadcaster':
-                broadcasters.remove(client.getId())
+        #    if client.getRole() == 'exhibitor':
+        #        exhibitors.remove(client)
+        #    elif client.getRole() == 'broadcaster':
+        #        broadcasters.remove(client)
                 
             client.close()
             break
+        
+    client.close()
         
 def isExhibitor(id):
     return id >= rangeIdExhibitor[0] and id <= rangeIdExhibitor[1]
@@ -66,7 +94,6 @@ def getNewOrigin(previousOrigin, client):
             broadcaster.setExhibitor(previousOrigin)
             exhibitor = lookupList(exhibitors, previousOrigin)    
             exhibitor.setBroadcaster(previousOrigin)
-            exhibitors.append(exhibitor)
             broadcaster.printClient()
         broadcasters.append(broadcaster)  
         return broadcaster    
@@ -84,7 +111,7 @@ def evalOriginClient(client, message):
     if getTypeFromMessage(message) == messageType["origin"]:
         origin = getOriginFromMessage(message)
         destin = server.getId() 
-        planetName = getPlanetNameFromOriginMessage(client, message)
+        planetName = getBufferFromMessage(message)
         client.setPlanetName(planetName)
         print ('< received', planetName, 'from', origin)
         
@@ -96,19 +123,47 @@ def evalKillClient(client, message):
     broadcaster = lookupList(broadcasters, client.getId())
     exhibitor = lookupList(exhibitors, broadcaster.getExhibitorId())
     
-    
     serverId = server.getId()
+    
+    destin = getDestinFromMessage(message)
     messageId = server.getIdMessage()
     exhibitor.send(KILL_MESSAGE(serverId, destin, messageId))
+    exhibitors.remove(exhibitor)
+    exhibitor.killClient()
     exhibitor.close()
+    
+    origin = getOriginFromMessage(message)
     broadcaster.send(OK_MESSAGE(serverId, origin, messageId))
+    broadcasters.remove(broadcaster)
+    broadcaster.killClient()
     broadcaster.close()
+    
     print('< received kill from', origin)
+    
+def evalMsgClient(client, message):
+    destin = getDestinFromMessage(message)
+    bufferSize = getBufferSizeFromMessage(message)
+    messageId = server.getIdMessage()
+    newMessage = getBufferFromMessage(message)
+    
+    msg = MSG_MESSAGE(client.getId(), destin, messageId, bufferSize, newMessage)
+    
+    if destin == 0:
+        broadcast(msg, client.getId())
+    else:
+        destinExhibitor = lookupList(exhibitors, destin)
+        destinExhibitor.send(msg)
+    
+    client.send(OK_MESSAGE(client.getId(), server.getId(), messageId))    
+    print("< sent message from", client.getId(), "to", destin)
         
 def evalClientMessage(client, message):
     messageId = getTypeFromMessage(message)
     if messageId == messageType["kill"]:
         evalKillClient(client, message)
+    elif messageId == messageType["msg"]:
+        print("Avaliando mensagem enviada:")
+        evalMsgClient(client, message)
             
          
 # Main function to receive the clients connection

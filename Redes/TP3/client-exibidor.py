@@ -51,11 +51,11 @@ def client_thread():
     eval(exhibitor, okOriginMessage)
      
     # Exibição
-    while True:
+    while exhibitor.isLive():
         message = exhibitor.recv(1024)
-        ret = eval(exhibitor, message)
-        if ret == -1:
-            break;
+        eval(exhibitor, message)
+    
+    client.close()
         
 
 main_thread = threading.Thread(target=client_thread)

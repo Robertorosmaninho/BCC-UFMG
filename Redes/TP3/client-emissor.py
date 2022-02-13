@@ -18,7 +18,7 @@ broadcaster = Broadcaster(-1, client)
 broadcaster.connect(host, port)
 
 def client_receive():
-    while True:
+    while broadcaster.isLive():
         try:
             message = broadcaster.recv(1024)
             ret  = eval(broadcaster, message)
@@ -28,10 +28,12 @@ def client_receive():
             print('Error on recv!')
             broadcaster.close()
             break
+        
+    broadcaster.close()     
 
 
 def client_send():
-    while True and not broadcaster.lastMessageWasKill():
+    while broadcaster.isLive():
         message = input('')
         newMessage = encodeMessage(broadcaster, message)
         broadcaster.send(newMessage)

@@ -29,7 +29,6 @@ rangeIdBroadcaster = (1, pow(2,12)-1)
 defaultIdExhibitor = 0
 defaultIdBroadcaster = -1
 
-
 def decodeMessage(message, attribute):
     strMessage = message.decode('utf-8')
     print('strMessage:', strMessage)
@@ -40,9 +39,11 @@ def decodeMessage(message, attribute):
         return listAttributes[2]
     elif attribute == "destin":
         return listAttributes[3]
+    elif attribute == "bufferSize":
+        return listAttributes[5]
     elif attribute == "buffer":
         if len(listAttributes) > 6:
-            return listAttributes[6].split(' ')[1]
+            return listAttributes[6][1:int(listAttributes[5])+1]
         else:
             sys.exit("Trying to return Buffer from a message without it.")
             
@@ -55,9 +56,11 @@ def getOriginFromMessage(message):
 def getTypeFromMessage(message):
     return int(decodeMessage(message, "type"))
 
-def getPlanetNameFromOriginMessage(client, message):
-    planetName = decodeMessage(message, "buffer")
-    return planetName
+def getBufferSizeFromMessage(message):
+    return int(decodeMessage(message, "bufferSize"))
+
+def getBufferFromMessage(message):
+    return decodeMessage(message, "buffer")
 
 #TODO: indicar erro para o caso do id ser maior que o range
 
@@ -66,7 +69,7 @@ def MESSAGE(tipo, orig, dest, idMessage):
     return message.encode('UTF-8')
     
 def EXT_MESSAGE(tipo, orig, dest, idMessage, bufferSize, buffer):
-    oldMessage = MESSAGE(messageType["origin"], orig, dest, idMessage)
+    oldMessage = MESSAGE(tipo, orig, dest, idMessage)
     newMessage = oldMessage.decode('UTF-8')
     newMessage += ' ' + str(bufferSize) + ' | '+ str(buffer) + ' |'
     return newMessage.encode('utf-8')
@@ -86,6 +89,10 @@ def KILL_MESSAGE(orig, dest, idMessage):
 def ORIGIN_MESSAGE(orig, dest, idMessage, bufferSize, planetName):
     return EXT_MESSAGE(messageType["origin"], orig, dest, idMessage, bufferSize, 
                        planetName)
+    
+def MSG_MESSAGE(orig, dest, idMessage, bufferSize, message):
+    return EXT_MESSAGE(messageType["msg"], orig, dest, idMessage, bufferSize, 
+                       message)
 
 class Server: 
     def __init__(self):
@@ -136,7 +143,7 @@ class Client:
         #self.address = addressClient
         self.planetName = ""
         self.Hi = False
-        self.Kill = False
+        self.live = True
         self.role = ""
         
     def addPlanetName(self, name):
@@ -169,11 +176,11 @@ class Client:
     def lastMessageWasHi(self):
         return self.Hi
     
-    def lastMessageWasKill(self):
-        return self.Kill
+    def isLive(self):
+        return self.live
     
-    def messageIsKill(self):
-        self.Kill = True
+    def killClient(self):
+        self.live = False
         
     def getRole(self):
         return self.role
@@ -227,16 +234,24 @@ def eval(client, message):
             client.messageIsNotHi()
             client.setId(getDestinFromMessage(message))
             print("< ok " + str(getDestinFromMessage(message)))
-        elif client.lastMessageWasKill():
+        elif not client.isLive():
             print("< ok kill")
+            client.killClient()
             client.close()
             return -1
         else:
             print("< ok")
     elif type == messageType["kill"]:
         print("< kill")
+        client.killClient()
         client.close()
-        return -1        
+        return -1 
+    elif type == messageType["error"]:
+        print("< error")
+    elif type == messageType["msg"]:
+        origin = getOriginFromMessage(message)
+        messageRecieved = getBufferFromMessage(message)
+        print('< msg from ' + str(origin) + ': ' + '\"' + str(messageRecieved) +  '\"')
     else:
         print('error: type is', type)
 
@@ -263,9 +278,19 @@ def encodeMessage(broadcaster, message):
         return message
     
     if messageTokens[0] == 'kill':
-        broadcaster.messageIsKill()
+        broadcaster.killClient()
         print("enviando kill")
         return KILL_MESSAGE(broadcaster.getId(), serverId, messageId)
+    
+    if messageTokens[0] == 'msg':
+        newMessage = messageTokens[3]
         
+        for i in range(4, len(messageTokens)):
+            newMessage += ' ' + messageTokens[i]
+            
+        return MSG_MESSAGE(broadcaster.getId(), messageTokens[1], messageId, 
+                           messageTokens[2], newMessage)
     
 server = Server()
+
+# Todo: Erro ao fechar a conexão quando não há um exibidor associado
