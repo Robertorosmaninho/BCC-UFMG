@@ -132,6 +132,10 @@ def evalMsgClient(client, message):
     if destin == 0:
         broadcast(msg, client.getId())
     else:
+        if not isExhibitor(destin):
+            broadcaster = lookupList(server.getBroadcasters(), destin)
+            destin = broadcaster.getExhibitorId()
+        
         destinExhibitor = lookupList(server.getExhibitors(), destin)
         #print("procurou o exibidor")
         if destinExhibitor is None:
@@ -147,6 +151,10 @@ def evalMsgClient(client, message):
 def evalCreqClient(client, message):
     destin = getDestinFromMessage(message)
     messageId = getMessageIdFromMessage(message)
+    
+    if not isExhibitor(destin):
+        broadcaster = lookupList(server.getBroadcasters(), destin)
+        destin = broadcaster.getExhibitorId()
     
     destinExhibitor = lookupList(server.getExhibitors(), destin)
     print("< received creq from", client.getId(), "to", destin)
@@ -172,6 +180,10 @@ def evalPlanetClient(client, message):
     destin = getDestinFromMessage(message)
     messageId = getMessageIdFromMessage(message)
     
+    if not isExhibitor(destin):
+        broadcaster = lookupList(server.getBroadcasters(), destin)
+        destin = broadcaster.getExhibitorId()
+    
     destinExhibitor = lookupList(server.getExhibitors(), destin)
     print("< received planet from", client.getId(), "to", destin)
     if destinExhibitor is None:
@@ -185,6 +197,10 @@ def evalPlanetClient(client, message):
 def evalPlanetListClient(client, message):
     destin = getDestinFromMessage(message)
     messageId = getMessageIdFromMessage(message)
+    
+    if not isExhibitor(destin):
+        broadcaster = lookupList(server.getBroadcasters(), destin)
+        destin = broadcaster.getExhibitorId()
     
     destinExhibitor = lookupList(server.getExhibitors(), destin)
     print("< received planetlist from", client.getId(), "to", destin)
