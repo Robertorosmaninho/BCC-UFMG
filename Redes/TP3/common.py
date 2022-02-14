@@ -268,7 +268,7 @@ class Client:
 class Broadcaster(Client):
     def __init__(self, id, socket):
         Client.__init__(self, id, socket)
-        self.exhibitorId = -1
+        self.exhibitorId = defaultIdExhibitor
         self.role = "broadcaster"
         
     def setExhibitor(self, exhibitor):
@@ -286,7 +286,7 @@ class Broadcaster(Client):
 class Exhibitor(Client):
     def __init__(self, id, socket):
         Client.__init__(self, id, socket)
-        self.broadcasterId = 0
+        self.broadcasterId = defaultIdBroadcaster
         self.role = "exhibitor"
         
     def setBroadcaster(self, broadcaster):
@@ -393,7 +393,6 @@ def encodeMessage(client, message):
         destin = messageTokens[1]
         return PLANETLIST_MESSAGE(client.getId(), destin, messageId)
 
-# Todo: Erro ao fechar a conexão quando não há um exibidor associado
 # Todo: mensagens que devem ser enviadas ao exibidor de um emissor dado como destino não são repassadas
 # Todo: Os ids das mensagens não correspondem aos exemplos princiaplmente no quesito de hi e origin
 # Todo: passar ip e porta via argumentos

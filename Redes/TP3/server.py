@@ -90,29 +90,29 @@ def evalOriginClient(client, message):
     
 def evalKillClient(client, message):
     broadcaster = lookupList(server.getBroadcasters(), client.getId())
-    exhibitor = lookupList(server.getExhibitors(), broadcaster.getExhibitorId())
-    
-    if broadcaster is None or exhibitor is None:
-        client.send(ERROR_MESSAGE(server.getId(), client.getId(), 
-                                  server.getIdMessage()))
-        print("< error trying to kill a non existent client")
-    
-    serverId = server.getId()
-    
-    destin = getDestinFromMessage(message)
-    messageId = getMessageIdFromMessage(message)
-    exhibitor.send(KILL_MESSAGE(serverId, destin, messageId))
-    server.removeExhibitor(exhibitor)
-    exhibitor.killClient()
-    exhibitor.close()
-    
     origin = getOriginFromMessage(message)
+    messageId = getMessageIdFromMessage(message)
+    serverId = server.getId()
+    print('< received kill from', origin)
+ 
+    if client.getExhibitorId() != defaultIdExhibitor:
+        exhibitor = lookupList(server.getExhibitors(), broadcaster.getExhibitorId())
+    
+        if broadcaster is None or exhibitor is None:
+            client.send(ERROR_MESSAGE(server.getId(), client.getId(), 
+                                      server.getIdMessage()))
+            print("< error trying to kill a non existent client")
+    
+        destin = getDestinFromMessage(message)
+        exhibitor.send(KILL_MESSAGE(serverId, destin, messageId))
+        server.removeExhibitor(exhibitor)
+        exhibitor.killClient()
+        exhibitor.close()
+    
     broadcaster.send(OK_MESSAGE(serverId, origin, messageId))
     server.removeBroadcaster(broadcaster)
     broadcaster.killClient()
     broadcaster.close()
-    
-    print('< received kill from', origin)
     
 def evalMsgClient(client, message):
     #print("descobrindo destino da msg")
