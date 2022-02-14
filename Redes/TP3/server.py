@@ -12,45 +12,9 @@ import socket
 
 host = '127.0.0.1'
 port = 59000
-
-exhibitors = []
-broadcasters = []
-
-def printExhibitorIds():
-    listIds = []
-    for exhibitor in exhibitors:
-        listIds.append(exhibitor.getId())
-    print("Exhibitors live: ", listIds)
-   
-def printBroadcasterIds():
-    listIds = []
-    for broadcaster in broadcasters:
-        listIds.append(broadcaster.getId())
-    print("Broadcastes live:", listIds)
-    
-def getPlanetList():
-    planetList = []
-    for exhibitor in exhibitors:
-        planetList.append(exhibitor.getPlanetName())
-    for broadcaster in broadcasters:
-        planetList.append(broadcaster.getPlanetName())
-    return planetList
-
-def getClientsIds():
-    return exhibitors + broadcasters
-
-def printPlanetList():
-    print(getPlanetList())
-            
-def lookupList(elems, id):
-    for elem in elems:
-        if elem.getId() == id:
-            return elem
-    print("Couldn't find exhibitor id")
-    return None
     
 def broadcast(message, sender):
-    for exhibitorIt in exhibitors:
+    for exhibitorIt in server.getExhibitors():
         if exhibitorIt != sender:
             exhibitorIt.send(message)
 
@@ -59,13 +23,13 @@ def broadcast(message, sender):
 def handle_client(client):
     while client.isLive():
         try:
-            printExhibitorIds()
-            printBroadcasterIds()
-            client.printClient()
+            #server.printExhibitorIds()
+            #server.printBroadcasterIds()
+            #client.printClient()
             message = client.recv(1024)
-            print("Trying to eval")
+            #print("Trying to eval")
             evalClientMessage(client, message)
-            print("Finishing the eval")
+            #print("Finishing the eval")
         except:
         #    if client.getRole() == 'exhibitor':
         #        exhibitors.remove(client)
@@ -85,22 +49,22 @@ def getNewOrigin(previousOrigin, client):
     if previousOrigin == defaultIdExhibitor:
         newOrigin = server.getExhibitorCounter() 
         exhibitor = Exhibitor(newOrigin, client)
-        exhibitors.append(exhibitor)
+        server.addExhibitor(exhibitor)
         return exhibitor
     else:
         newOrigin = server.getBroadcasterCounter()
         broadcaster = Broadcaster(newOrigin, client)
         if isExhibitor(previousOrigin):
             broadcaster.setExhibitor(previousOrigin)
-            exhibitor = lookupList(exhibitors, previousOrigin)
+            exhibitor = lookupList(server.getExhibitors(), previousOrigin)
             if exhibitor is None:
                 broadcaster.send(ERROR_MESSAGE(server.getId(), newOrigin, 
                                                server.getIdMessage()))
                 print("< error trying to sync to non existent exhibitor")
                 return broadcaster    
             exhibitor.setBroadcaster(previousOrigin)
-            broadcaster.printClient()
-        broadcasters.append(broadcaster)  
+            #broadcaster.printClient()
+        server.addBroadcaster(broadcaster)  
         return broadcaster    
     
 def evalHiClient(message, client):
@@ -125,8 +89,8 @@ def evalOriginClient(client, message):
         return 0, 0, 0
     
 def evalKillClient(client, message):
-    broadcaster = lookupList(broadcasters, client.getId())
-    exhibitor = lookupList(exhibitors, broadcaster.getExhibitorId())
+    broadcaster = lookupList(server.getBroadcasters(), client.getId())
+    exhibitor = lookupList(server.getExhibitors(), broadcaster.getExhibitorId())
     
     if broadcaster is None or exhibitor is None:
         client.send(ERROR_MESSAGE(server.getId(), client.getId(), 
@@ -136,41 +100,108 @@ def evalKillClient(client, message):
     serverId = server.getId()
     
     destin = getDestinFromMessage(message)
-    messageId = server.getIdMessage()
+    messageId = getMessageIdFromMessage(message)
     exhibitor.send(KILL_MESSAGE(serverId, destin, messageId))
-    exhibitors.remove(exhibitor)
+    server.removeExhibitor(exhibitor)
     exhibitor.killClient()
     exhibitor.close()
     
     origin = getOriginFromMessage(message)
     broadcaster.send(OK_MESSAGE(serverId, origin, messageId))
-    broadcasters.remove(broadcaster)
+    server.removeBroadcaster(broadcaster)
     broadcaster.killClient()
     broadcaster.close()
     
     print('< received kill from', origin)
     
 def evalMsgClient(client, message):
+    #print("descobrindo destino da msg")
     destin = getDestinFromMessage(message)
+    #print("descobrindo bufferSize da msg")
     bufferSize = getBufferSizeFromMessage(message)
-    messageId = server.getIdMessage()
+    #print("descobrindo messageId da msg")
+    messageId = getMessageIdFromMessage(message)
+    #print("descobrindo o buffer da msg")
     newMessage = getBufferFromMessage(message)
     
+    #print("pegou todos os dados necessarios para construir a msg")
     msg = MSG_MESSAGE(client.getId(), destin, messageId, bufferSize, newMessage)
     
+    #print("Construiu a msg")
     if destin == 0:
         broadcast(msg, client.getId())
     else:
-        destinExhibitor = lookupList(exhibitors, destin)
+        destinExhibitor = lookupList(server.getExhibitors(), destin)
+        #print("procurou o exibidor")
         if destinExhibitor is None:
-            client.send(ERROR_MESSAGE(server.getId(), client.getId(), 
-                                      server.getIdMessage()))
+            #print("Não achou o exibidor")
+            client.send(ERROR_MESSAGE(server.getId(), client.getId(), messageId))
             print("< error trying to send message to a non existent exhibitor")
             return
+        #print("achou o exibidor")
         destinExhibitor.send(msg)
-    
+        #print("eviou msg para o exibidor")
     client.send(OK_MESSAGE(client.getId(), server.getId(), messageId))    
     print("< sent message from", client.getId(), "to", destin)
+    
+    
+def evalCreqClient(client, message):
+    destin = getDestinFromMessage(message)
+    messageId = getMessageIdFromMessage(message)
+    
+    destinExhibitor = lookupList(server.getExhibitors(), destin)
+    if destinExhibitor is None:
+        client.send(ERROR_MESSAGE(server.getId(), client.getId(), messageId))
+        print("< error trying to send a clist to a non existent exhibitor")
+        return
+    
+    ids = ""
+    for id in server.getClientsIds():
+        ids += str(id) + " "
+    clist = "clist: \"" + ids[:-1] + "\""
+    clistSize = len(clist)
+    
+    #print("enviando msg para o exibidor")
+    destinExhibitor.send(CLIST_MESSAGE(server.getId(), client.getId(), 
+                                        messageId, clistSize, clist))
+    #print("eviou msg para o exibidor")
+    client.send(OK_MESSAGE(server.getId(), client.getId(), messageId))
+    #print("enviou msg pro emissor")
+    print("< received creq from", client.getId(), "to", destin)
+
+def evalPlanetClient(client, message):
+    destin = getDestinFromMessage(message)
+    messageId = getMessageIdFromMessage(message)
+    
+    destinExhibitor = lookupList(server.getExhibitors(), destin)
+    if destinExhibitor is None:
+        client.send(ERROR_MESSAGE(server.getId(), client.getId(), messageId))
+        print("< error trying to discover the planet of non existent exhibitor")
+        return
+    destinExhibitor.send(PLANET_MESSAGE(client.getId(), destin, messageId))
+    client.send(OK_MESSAGE(server.getId(), client.getId(), messageId))
+    
+        
+def evalPlanetListClient(client, message):
+    destin = getDestinFromMessage(message)
+    messageId = getMessageIdFromMessage(message)
+    
+    destinExhibitor = lookupList(server.getExhibitors(), destin)
+    if destinExhibitor is None:
+        client.send(ERROR_MESSAGE(server.getId(), client.getId(), messageId))
+        print("< error trying to send the planetlist to a non existent exhibitor")
+        return
+    
+    planets = ""
+    for planet in server.getPlanetList():
+        planets += planet + " "
+    planetList =  "planetlist: \"" + planets[:-1] + "\""
+    planetListSize = len(planetList)
+    
+    destinExhibitor.send(PLANETLIST_RESP_MESSAGE(client.getId(), destin, messageId, 
+                                            planetListSize, planetList))
+    client.send(OK_MESSAGE(server.getId(), client.getId(), messageId))
+    
         
 def evalClientMessage(client, message):
     messageId = getTypeFromMessage(message)
@@ -178,7 +209,13 @@ def evalClientMessage(client, message):
         evalKillClient(client, message)
     elif messageId == messageType["msg"]:
         evalMsgClient(client, message)
-            
+    elif messageId == messageType["creq"]:
+        evalCreqClient(client, message)
+    elif messageId == messageType["planet"]:
+        evalPlanetClient(client, message)
+    elif messageId == messageType["planetlist"]:
+        evalPlanetListClient(client, message)
+    
          
 # Main function to receive the clients connection
 def receive(host, port):
@@ -211,7 +248,7 @@ def receive(host, port):
             break
         
         thread = threading.Thread(target=handle_client, args=(newClient,))
-        newClient.printClient()
+        #newClient.printClient()
         thread.start()
 
 

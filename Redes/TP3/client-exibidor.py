@@ -17,23 +17,11 @@ port = 59000
 exhibitor = Exhibitor(0, client)
 exhibitor.connect(host, port)
 
-def encodeMessage(exhibitor, message):
-    messageTokens = message.split(' ')
-    if messageTokens[0] == 'hi':
-        exhibitor.messageIsHi()
-        return HI_MESSAGE(exhibitor.getId(), server.getId(), 
-                          server.getIncIdMessage())
-    if messageTokens[0] == 'origin':
-        planetName = messageTokens[2]
-        message = ORIGIN_MESSAGE(exhibitor.getId(), server.getId(), 
-                                 server.getIncIdMessage(), messageTokens[1],
-                                 planetName)
-        return message
-
 
 def client_thread():
     # Envio do HI
     hiMessage = 'hi'#input('')
+    print(hiMessage)
     encodedHiMessage = encodeMessage(exhibitor, hiMessage)
     exhibitor.send(encodedHiMessage)
         
@@ -43,6 +31,7 @@ def client_thread():
     
     # Envio do ORIGIN
     originMessage = 'origin 6 netuno'#input('')
+    print(originMessage)
     encodedOriginMessage = encodeMessage(exhibitor, originMessage)
     exhibitor.send(encodedOriginMessage)
         

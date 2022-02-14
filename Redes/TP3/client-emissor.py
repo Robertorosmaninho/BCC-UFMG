@@ -19,15 +19,15 @@ broadcaster.connect(host, port)
 
 def client_receive():
     while broadcaster.isLive():
-        try:
-            message = broadcaster.recv(1024)
-            ret  = eval(broadcaster, message)
-            if ret == -1:
-                break
-        except:
-            print('Error on recv!')
-            broadcaster.close()
+        #try:
+       message = broadcaster.recv(1024)
+       ret  = eval(broadcaster, message)
+       if ret == -1:
             break
+        #except:
+        #    print('Error on recv!')
+        #    broadcaster.close()
+        #    break
         
     broadcaster.close()     
 
