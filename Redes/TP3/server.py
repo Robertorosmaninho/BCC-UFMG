@@ -126,6 +126,7 @@ def evalMsgClient(client, message):
     
     #print("pegou todos os dados necessarios para construir a msg")
     msg = MSG_MESSAGE(client.getId(), destin, messageId, bufferSize, newMessage)
+    print("< sent message from", client.getId(), "to", destin)
     
     #print("Construiu a msg")
     if destin == 0:
@@ -142,14 +143,13 @@ def evalMsgClient(client, message):
         destinExhibitor.send(msg)
         #print("eviou msg para o exibidor")
     client.send(OK_MESSAGE(client.getId(), server.getId(), messageId))    
-    print("< sent message from", client.getId(), "to", destin)
-    
     
 def evalCreqClient(client, message):
     destin = getDestinFromMessage(message)
     messageId = getMessageIdFromMessage(message)
     
     destinExhibitor = lookupList(server.getExhibitors(), destin)
+    print("< received creq from", client.getId(), "to", destin)
     if destinExhibitor is None:
         client.send(ERROR_MESSAGE(server.getId(), client.getId(), messageId))
         print("< error trying to send a clist to a non existent exhibitor")
@@ -167,13 +167,13 @@ def evalCreqClient(client, message):
     #print("eviou msg para o exibidor")
     client.send(OK_MESSAGE(server.getId(), client.getId(), messageId))
     #print("enviou msg pro emissor")
-    print("< received creq from", client.getId(), "to", destin)
 
 def evalPlanetClient(client, message):
     destin = getDestinFromMessage(message)
     messageId = getMessageIdFromMessage(message)
     
     destinExhibitor = lookupList(server.getExhibitors(), destin)
+    print("< received planet from", client.getId(), "to", destin)
     if destinExhibitor is None:
         client.send(ERROR_MESSAGE(server.getId(), client.getId(), messageId))
         print("< error trying to discover the planet of non existent exhibitor")
@@ -187,6 +187,7 @@ def evalPlanetListClient(client, message):
     messageId = getMessageIdFromMessage(message)
     
     destinExhibitor = lookupList(server.getExhibitors(), destin)
+    print("< received planetlist from", client.getId(), "to", destin)
     if destinExhibitor is None:
         client.send(ERROR_MESSAGE(server.getId(), client.getId(), messageId))
         print("< error trying to send the planetlist to a non existent exhibitor")
@@ -202,6 +203,9 @@ def evalPlanetListClient(client, message):
                                             planetListSize, planetList))
     client.send(OK_MESSAGE(server.getId(), client.getId(), messageId))
     
+def evalOkClient(client, message):
+    origin = getOriginFromMessage(message)
+    print("< ok from " + str(origin))
         
 def evalClientMessage(client, message):
     messageId = getTypeFromMessage(message)
@@ -215,6 +219,8 @@ def evalClientMessage(client, message):
         evalPlanetClient(client, message)
     elif messageId == messageType["planetlist"]:
         evalPlanetListClient(client, message)
+    elif messageId == messageType["ok"]:
+        evalOkClient(client, message)
     
          
 # Main function to receive the clients connection

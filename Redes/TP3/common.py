@@ -6,7 +6,7 @@ def lookupList(elems, id):
     for elem in elems:
         if elem.getId() == id:
             return elem
-    print("Couldn't find exhibitor id")
+    #print("Couldn't find exhibitor id")
     return None
           
 messageType = { "ok"         : 1 
@@ -321,6 +321,8 @@ def eval(client, message):
             return 0
     elif type == messageType["kill"]:
         print("< kill")
+        client.send(OK_MESSAGE(client.getId(), server.getId(), 
+                               getMessageIdFromMessage(message)))
         client.killClient()
         client.close()
         return -1 
@@ -330,9 +332,13 @@ def eval(client, message):
         origin = getOriginFromMessage(message)
         messageRecieved = getBufferFromMessage(message)
         print('< msg from ' + str(origin) + ': ' + '\"' + str(messageRecieved) +  '\"')   
+        client.send(OK_MESSAGE(client.getId(), server.getId(), 
+                               getMessageIdFromMessage(message)))
     elif type == messageType["clist"]:
         clist = getBufferFromMessage(message)
         print(clist)
+        client.send(OK_MESSAGE(client.getId(), server.getId(), 
+                               getMessageIdFromMessage(message)))
     elif type == messageType["planet"]:
         newMessage = "planet of " + str(client.getId()) + ": " + "\""
         newMessage += client.getPlanetName() + "\""
