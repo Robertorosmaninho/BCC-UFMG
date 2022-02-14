@@ -36,16 +36,18 @@ def getPlanetList():
         planetList.append(broadcaster.getPlanetName())
     return planetList
 
+def getClientsIds():
+    return exhibitors + broadcasters
+
 def printPlanetList():
     print(getPlanetList())
             
 def lookupList(elems, id):
-    print('looking for id:', id)
     for elem in elems:
-        print('actual id:', elem.getId())
         if elem.getId() == id:
             return elem
     print("Couldn't find exhibitor id")
+    return None
     
 def broadcast(message, sender):
     for exhibitorIt in exhibitors:
@@ -88,11 +90,14 @@ def getNewOrigin(previousOrigin, client):
     else:
         newOrigin = server.getBroadcasterCounter()
         broadcaster = Broadcaster(newOrigin, client)
-        print('passou aqui -> broadcast')
         if isExhibitor(previousOrigin):
-            print('passou aqui -> broadcast com exhibitor')
             broadcaster.setExhibitor(previousOrigin)
-            exhibitor = lookupList(exhibitors, previousOrigin)    
+            exhibitor = lookupList(exhibitors, previousOrigin)
+            if exhibitor is None:
+                broadcaster.send(ERROR_MESSAGE(server.getId(), newOrigin, 
+                                               server.getIdMessage()))
+                print("< error trying to sync to non existent exhibitor")
+                return broadcaster    
             exhibitor.setBroadcaster(previousOrigin)
             broadcaster.printClient()
         broadcasters.append(broadcaster)  
@@ -123,6 +128,11 @@ def evalKillClient(client, message):
     broadcaster = lookupList(broadcasters, client.getId())
     exhibitor = lookupList(exhibitors, broadcaster.getExhibitorId())
     
+    if broadcaster is None or exhibitor is None:
+        client.send(ERROR_MESSAGE(server.getId(), client.getId(), 
+                                  server.getIdMessage()))
+        print("< error trying to kill a non existent client")
+    
     serverId = server.getId()
     
     destin = getDestinFromMessage(message)
@@ -152,6 +162,11 @@ def evalMsgClient(client, message):
         broadcast(msg, client.getId())
     else:
         destinExhibitor = lookupList(exhibitors, destin)
+        if destinExhibitor is None:
+            client.send(ERROR_MESSAGE(server.getId(), client.getId(), 
+                                      server.getIdMessage()))
+            print("< error trying to send message to a non existent exhibitor")
+            return
         destinExhibitor.send(msg)
     
     client.send(OK_MESSAGE(client.getId(), server.getId(), messageId))    
@@ -162,7 +177,6 @@ def evalClientMessage(client, message):
     if messageId == messageType["kill"]:
         evalKillClient(client, message)
     elif messageId == messageType["msg"]:
-        print("Avaliando mensagem enviada:")
         evalMsgClient(client, message)
             
          
