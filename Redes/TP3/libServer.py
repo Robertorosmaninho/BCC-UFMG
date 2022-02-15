@@ -132,7 +132,8 @@ def evalCreqClient(client, message):
 def evalPlanetClient(client, message):
     destin = int(decodeMessage(message, "destin"))
     messageId = int(decodeMessage(message, "messageId"))
-    
+    originalDestin = destin
+
     print("< received planet from", client.getId(), "to", destin)
     if not isExhibitor(destin):
         broadcaster = lookupList(server.getBroadcasters(), destin)
@@ -141,14 +142,22 @@ def evalPlanetClient(client, message):
             print("< error trying to send message to a non existent broadcaster")
             return
         destin = broadcaster.getExhibitorId()
-            
     
     destinExhibitor = lookupList(server.getExhibitors(), destin)
     if destinExhibitor is None:
         client.send(ERROR_MESSAGE(server.getId(), client.getId(), messageId))
         print("< error trying to discover the planet of non existent exhibitor")
         return
-    destinExhibitor.send(PLANET_MESSAGE(client.getId(), destin, messageId))
+    
+    planetName = server.getPlanetFromId(originalDestin)
+    if planetName == "":
+        client.send(ERROR_MESSAGE(server.getId(), client.getId(), messageId))
+        print("< error trying to discover the planetName")
+        return 
+    
+    destinExhibitor.send(PLANET_RESP_MESSAGE(client.getId(), originalDestin, 
+                                             messageId, len(planetName), 
+                                             planetName))
     client.send(OK_MESSAGE(server.getId(), client.getId(), messageId))
     
         

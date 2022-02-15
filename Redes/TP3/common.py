@@ -86,6 +86,10 @@ def CLIST_MESSAGE(orig, dest, idMessage, bufferSize, clist):
 def PLANET_MESSAGE(orig, dest, idMessage):
     return MESSAGE(messageType["planet"], orig, dest, idMessage)
 
+def PLANET_RESP_MESSAGE(orig, dest, idMessage, bufferSize, planetName):
+    return EXT_MESSAGE(messageType["planet"], orig, dest, idMessage, bufferSize, 
+                       planetName)
+
 def PLANETLIST_MESSAGE(orig, dest, idMessage):
     return MESSAGE(messageType["planetlist"], orig, dest, idMessage)
 
@@ -159,13 +163,19 @@ class Server:
         planetList = []
         for client in self.getClients():
             planetList.append(client.getPlanetName())
-        return planetList
+        return list(dict.fromkeys(planetList))
 
     def getClientsIds(self):
         listIds = []
         for client in self.getClients():
             listIds.append(client.getId())
-        return listIds    
+        return listIds
+    
+    def getPlanetFromId(self, id):
+        for client in self.getClients():
+            if client.getId() == id:
+                return client.getPlanetName()   
+        return ""
    
 server = Server()     
 
@@ -249,6 +259,8 @@ def eval(client, message):
         return 1
     
     type = int(decodeMessage(message, "type"))
+    messageId = int(decodeMessage(message, "messageId"))
+    
     if type == messageType["ok"]:
         if client.lastMessageWasHi():
             client.messageIsNotHi()
@@ -263,33 +275,39 @@ def eval(client, message):
         else:
             print("< ok")
             return 0
+        
     elif type == messageType["kill"]:
         print("< kill")
-        client.send(OK_MESSAGE(client.getId(), server.getId(), 
-                               int(decodeMessage(message, "messageId"))))
+        client.send(OK_MESSAGE(client.getId(), server.getId(), messageId))
         client.killClient()
         client.close()
-        return -1 
+        return -1
+     
     elif type == messageType["error"]:
         print("< error")
+        
     elif type == messageType["msg"]:
         origin = int(decodeMessage(message, "origin"))
         messageRecieved = decodeMessage(message, "buffer")
         print('< msg from ' + str(origin) + ': ' + '\"' + str(messageRecieved) +  '\"')   
-        client.send(OK_MESSAGE(client.getId(), server.getId(), 
-                               int(decodeMessage(message, "messageId"))))
+        client.send(OK_MESSAGE(client.getId(), server.getId(), messageId))
+        
     elif type == messageType["clist"]:
         clist = decodeMessage(message, "buffer")
-        print(clist)
-        client.send(OK_MESSAGE(client.getId(), server.getId(), 
-                               int(decodeMessage(message, "messageId"))))
+        print("< " + clist)
+        client.send(OK_MESSAGE(client.getId(), server.getId(), messageId))
+        
     elif type == messageType["planet"]:
-        newMessage = "planet of " + str(client.getId()) + ": " + "\""
-        newMessage += client.getPlanetName() + "\""
+        planetId = int(decodeMessage(message, "destin"))
+        planetName = decodeMessage(message, "buffer")
+        newMessage = "< planet of " + str(planetId) + ": " + "\""
+        newMessage += planetName + "\""
         print(newMessage)    
+        
     elif type == messageType["planetlist"]:
         planetList = decodeMessage(message, "buffer")
-        print(planetList)
+        print("< " + planetList)
+        
     else:
         print('error: type is', type)
     
@@ -313,7 +331,6 @@ def encodeMessage(client, message):
     
     if messageTokens[0] == 'kill':
         client.killClient()
-        print("enviando kill")
         return KILL_MESSAGE(client.getId(), serverId, messageId)
     
     if messageTokens[0] == 'msg':
