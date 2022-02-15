@@ -8,7 +8,7 @@ def broadcast(message, sender):
 def isExhibitor(id):
     return id >= rangeIdExhibitor[0] and id <= rangeIdExhibitor[1]
 
-def getNewOrigin(previousOrigin, client):
+def registerNewClient(previousOrigin, client):
     newOrigin = 0
     if previousOrigin == defaultIdExhibitor:
         newOrigin = server.getExhibitorCounter() 
@@ -33,7 +33,7 @@ def getNewOrigin(previousOrigin, client):
 def evalHiClient(message, client):
         print('< received hi')
         previousOrigin = int(decodeMessage(message, "origin"))
-        newClient = getNewOrigin(previousOrigin, client)
+        newClient = registerNewClient(previousOrigin, client)
         newClient.send(OK_MESSAGE(server.getId(), newClient.getId(), 
                                     server.getIdMessage()))
         return newClient
