@@ -1,12 +1,10 @@
 import socket
 import sys
-
     
 def lookupList(elems, id):
     for elem in elems:
         if elem.getId() == id:
             return elem
-    #print("Couldn't find exhibitor id")
     return None
           
 messageType = { "ok"         : 1 
@@ -29,7 +27,6 @@ defaultIdBroadcaster = -1
 
 def decodeMessage(message, attribute):
     strMessage = message.decode('utf-8')
-    #print('strMessage:', strMessage)
     listAttributes = strMessage.split("|")
     if  attribute == "type":
         return listAttributes[1]
@@ -48,27 +45,6 @@ def decodeMessage(message, attribute):
             sys.exit("Trying to return Buffer from a message without it.")
     else:
         sys.exit("Trying to decode a message with wrong type.")
-            
-def getDestinFromMessage(message):
-    return int(decodeMessage(message, "destin"))
-
-def getOriginFromMessage(message):
-    return int(decodeMessage(message, "origin"))
-
-def getTypeFromMessage(message):
-    return int(decodeMessage(message, "type"))
-
-def getBufferSizeFromMessage(message):
-    return int(decodeMessage(message, "bufferSize"))
-
-def getBufferFromMessage(message):
-    #print("tentado recuperar msg do buffer da msg")
-    return decodeMessage(message, "buffer")
-
-def getMessageIdFromMessage(message):
-    return int(decodeMessage(message, "messageId"))
-
-#TODO: indicar erro para o caso do id ser maior que o range
 
 def MESSAGE(tipo, orig, dest, idMessage):
     message = "| " + str(tipo) + " | " + str(orig) + " | "+ str(dest) + " | " + str(idMessage) + " |"
@@ -124,7 +100,6 @@ class Server:
         self.idMessage = 0
         self.exhibitorCounter = rangeIdExhibitor[0] - 1
         self.broadcasterCounter = rangeIdBroadcaster[0] - 1
-        self.clients = set()
         self.broadcasters = []
         self.exhibitors = []
         
@@ -176,18 +151,6 @@ class Server:
         
     def removeExhibitor(self,exhibitor):
         self.exhibitors.remove(exhibitor)
-        
-    def printExhibitorIds(self):
-        listIds = []
-        for exhibitor in self.exhibitors:
-            listIds.append(exhibitor.getId())
-        print("Exhibitors live: ", listIds)
-   
-    def printBroadcasterIds(self):
-        listIds = []
-        for broadcaster in self.broadcasters:
-            listIds.append(broadcaster.getId())
-        print("Broadcastes live:", listIds)
     
     def getClients(self):
         return self.exhibitors + self.broadcasters
@@ -202,15 +165,7 @@ class Server:
         listIds = []
         for client in self.getClients():
             listIds.append(client.getId())
-        #print("Clients live:", listIds)
         return listIds    
-    
-    def getPlanetOfId(self, id):
-        for client in self.getClients():
-            if client.getId() == id:
-                return client.getPlanetName()
-    
-        return "error"
    
 server = Server()     
 
@@ -271,17 +226,11 @@ class Broadcaster(Client):
         self.exhibitorId = defaultIdExhibitor
         self.role = "broadcaster"
         
-    def setExhibitor(self, exhibitor):
+    def setExhibitorId(self, exhibitor):
         self.exhibitorId = exhibitor
         
     def getExhibitorId(self):
         return self.exhibitorId
-    
-    def printClient(self):
-        print(' -> Role:', self.role)
-        print('    planet:', self.planetName)
-        print('    id:', self.id)
-        print('    exhibitorId:', self.exhibitorId)
     
 class Exhibitor(Client):
     def __init__(self, id, socket):
@@ -289,30 +238,25 @@ class Exhibitor(Client):
         self.broadcasterId = defaultIdBroadcaster
         self.role = "exhibitor"
         
-    def setBroadcaster(self, broadcaster):
+    def setBroadcasterId(self, broadcaster):
         self.broadcasterId = broadcaster
         
     def getBroadcasterId(self):
         return self.broadcasterId
-    
-    def printClient(self):
-        print(' -> Role:', self.role)
-        print('    planet:', self.planetName)
-        print('    id:', self.id)
-        print('    broadcasterId:', self.broadcasterId)
 
 def eval(client, message):
     if len(message) == 0:
         return 1
     
-    type = getTypeFromMessage(message)
+    type = int(decodeMessage(message, "type"))
     if type == messageType["ok"]:
         if client.lastMessageWasHi():
             client.messageIsNotHi()
-            client.setId(getDestinFromMessage(message))
-            print("< ok " + str(getDestinFromMessage(message)))
+            destin = decodeMessage(message, "destin")
+            client.setId(int(destin))
+            print("< ok" + destin)
         elif not client.isLive():
-            print("< ok kill")
+            print("< ok")
             client.killClient()
             client.close()
             return -1
@@ -322,29 +266,29 @@ def eval(client, message):
     elif type == messageType["kill"]:
         print("< kill")
         client.send(OK_MESSAGE(client.getId(), server.getId(), 
-                               getMessageIdFromMessage(message)))
+                               int(decodeMessage(message, "messageId"))))
         client.killClient()
         client.close()
         return -1 
     elif type == messageType["error"]:
         print("< error")
     elif type == messageType["msg"]:
-        origin = getOriginFromMessage(message)
-        messageRecieved = getBufferFromMessage(message)
+        origin = int(decodeMessage(message, "origin"))
+        messageRecieved = decodeMessage(message, "buffer")
         print('< msg from ' + str(origin) + ': ' + '\"' + str(messageRecieved) +  '\"')   
         client.send(OK_MESSAGE(client.getId(), server.getId(), 
-                               getMessageIdFromMessage(message)))
+                               int(decodeMessage(message, "messageId"))))
     elif type == messageType["clist"]:
-        clist = getBufferFromMessage(message)
+        clist = decodeMessage(message, "buffer")
         print(clist)
         client.send(OK_MESSAGE(client.getId(), server.getId(), 
-                               getMessageIdFromMessage(message)))
+                               int(decodeMessage(message, "messageId"))))
     elif type == messageType["planet"]:
         newMessage = "planet of " + str(client.getId()) + ": " + "\""
         newMessage += client.getPlanetName() + "\""
         print(newMessage)    
     elif type == messageType["planetlist"]:
-        planetList = getBufferFromMessage(message)
+        planetList = decodeMessage(message, "buffer")
         print(planetList)
     else:
         print('error: type is', type)
@@ -390,9 +334,6 @@ def encodeMessage(client, message):
         return PLANET_MESSAGE(client.getId(), destin, messageId)
     
     if messageTokens[0] == 'planetlist':
-        destin = messageTokens[1]
-        return PLANETLIST_MESSAGE(client.getId(), destin, messageId)
+        return PLANETLIST_MESSAGE(client.getId(), server.getId(), messageId)
 
-# Todo: mensagens que devem ser enviadas ao exibidor de um emissor dado como destino não são repassadas
 # Todo: Os ids das mensagens não correspondem aos exemplos princiaplmente no quesito de hi e origin
-# Todo: passar ip e porta via argumentos

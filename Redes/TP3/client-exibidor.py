@@ -5,39 +5,28 @@ import socket
 import types
 
 from common import *
-#  HI_MESSAGE(defaultIdExibidor, defaultIdEmissor, idMensagem)
 
 import threading
 import socket
-client = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 
-host = '127.0.0.1'
-port = 59000
-
-exhibitor = Exhibitor(0, client)
-exhibitor.connect(host, port)
-
-
-def client_thread():
-    # Envio do HI
-    hiMessage = 'hi'#input('')
-    print(hiMessage)
-    encodedHiMessage = encodeMessage(exhibitor, hiMessage)
-    exhibitor.send(encodedHiMessage)
+def receive(exhibitor):
+    # Envio do Hi/Origin
+    message = input('')
+    encodedMessage = encodeMessage(exhibitor, message)
+    exhibitor.send(encodedMessage)
         
-    # Recido do OK do HI
-    okHiMessage = exhibitor.recv(1024)
-    eval(exhibitor, okHiMessage)
+    # Recibo do OK do Hi/Origin
+    okMessage = exhibitor.recv(1024)
+    eval(exhibitor, okMessage)
     
-    # Envio do ORIGIN
-    originMessage = 'origin 6 netuno'#input('')
-    print(originMessage)
-    encodedOriginMessage = encodeMessage(exhibitor, originMessage)
-    exhibitor.send(encodedOriginMessage)
-        
-    # Recido do OK do ORIGIN
-    okOriginMessage = exhibitor.recv(1024)
-    eval(exhibitor, okOriginMessage)
+
+def client_thread(exhibitor):
+    
+    # Recebe e trata o Hi
+    receive(exhibitor)
+    
+    # Recebe e trata o Origin
+    receive(exhibitor)
      
     # Exibição
     while exhibitor.isLive():
@@ -45,7 +34,18 @@ def client_thread():
         eval(exhibitor, message)
     
     client.close()
-        
+    
 
-main_thread = threading.Thread(target=client_thread)
-main_thread.start()
+if __name__ == '__main__':
+    if len(sys.argv) != 3:
+        sys.exit("Usage: python server.py [ip] [port]")
+        
+    host = sys.argv[1] #'127.0.0.1'
+    port = int(sys.argv[2]) #59000
+
+    client = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    exhibitor = Exhibitor(0, client)
+    exhibitor.connect(host, port)
+
+    main_thread = threading.Thread(target=client_thread, args=(exhibitor,))
+    main_thread.start()
