@@ -4,7 +4,7 @@ CM.make("$/basis.cm");
 CM.make("$/ml-yacc-lib.cm");
 
 use "Environ.sml";
-use "Absyn.sml";
+(*use "Absyn.sml";*)
 use "PlcParserAux.sml";
 use "PlcParser.yacc.sig";
 use "PlcParser.yacc.sml";

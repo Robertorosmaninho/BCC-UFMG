@@ -3,5 +3,4 @@ var z = x + 3;
 
 print x;
 print z;
-print (z + x);
-print (z <= 0)
+print (z + x)
