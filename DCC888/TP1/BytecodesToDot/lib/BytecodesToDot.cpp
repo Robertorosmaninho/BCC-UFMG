@@ -1,34 +1,49 @@
 #ifndef BYTECODESTODOT_CPP
 #define BYTECODESTODOT_CPP
 
-#include "llvm/Pass.h"
 #include "llvm/IR/Function.h"
 #include "llvm/Support/raw_ostream.h"
 
-#include "llvm/IR/LegacyPassManager.h"
+#include "llvm/Passes/PassBuilder.h"
+#include "llvm/Passes/PassPlugin.h"
+#include "llvm/IR/PassManager.h"
+
 #include "llvm/Transforms/IPO/PassManagerBuilder.h"
 
 using namespace llvm;
 
 namespace {
-struct BytecodesToDot : public FunctionPass {
-    static char ID;
-    BytecodesToDot() : FunctionPass(ID) {}
-
-    bool runOnFunction(Function &F) override {
+struct BytecodesToDot : PassInfoMixin<BytecodesToDot> {
+    PreservedAnalyses run(Function &F, FunctionAnalysisManager &) {
         errs() << F.getName() << "\n";
-        return false;
+        return PreservedAnalyses::all();
     }
+
+    static bool isRequired() { return true; }
 }; // end of struct BytecodeToDot
 } // end of anonymous namespace
 
-char BytecodesToDot::ID = 0;
-static RegisterPass<BytecodesToDot> X("bytecodesToDot",
-                                      "Outputs the CFG of the program as a dot file",
-                                      false, false);
+llvm::PassPluginLibraryInfo getHelloWorldPluginInfo() {
+    return {LLVM_PLUGIN_API_VERSION, "bytecodesToDot", LLVM_VERSION_STRING,
+            [](PassBuilder &PB) {
+                PB.registerPipelineParsingCallback(
+                        [](StringRef Name, FunctionPassManager &FPM,
+                           ArrayRef<PassBuilder::PipelineElement>) {
+                            if (Name == "bytecodesToDot") {
+                                FPM.addPass(BytecodesToDot());
+                                return true;
+                            }
+                            return false;
+                        });
+            }};
+}
 
-static RegisterStandardPasses Y(PassManagerBuilder::EP_EarlyAsPossible,
-                                []( const PassManagerBuilder &Builder,
-                                legacy::PassManagerBase &PM) { PM.add(new BytecodesToDot()); });
+
+extern "C" LLVM_ATTRIBUTE_WEAK ::llvm::PassPluginLibraryInfo
+llvmGetPassPluginInfo() {
+    return getHelloWorldPluginInfo();
+}
+
+// "Outputs the CFG of the program as a dot file",
 
 #endif // BYTECODESTODOT_CPP
