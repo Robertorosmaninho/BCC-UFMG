@@ -1,0 +1,10 @@
+add_library(BytecodesToDot MODULE
+        BytecodesToDot.cpp)
+
+target_link_libraries(BytecodesToDot
+        LLVMCore
+        LLVMIRReader
+        LLVMPasses
+        LLVMSupport)
+target_include_directories(BytecodesToDot PRIVATE
+    "${CMAKE_CURRENT_SOURCE_DIR}/../include")
