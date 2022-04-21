@@ -1,5 +1,9 @@
-add_library(BytecodesToDot MODULE
-        BytecodesToDot.cpp)
+add_llvm_library(BytecodesToDot MODULE
+        BytecodesToDot.cpp
+
+        PLUGIN_TOOL
+        opt
+        )
 
 target_link_libraries(BytecodesToDot
         LLVMCore
