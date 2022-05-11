@@ -1,0 +1,3 @@
+/Users/robertorosmaninho/Desktop/ESCOLAS/UFMG/9˚ Período - 2022.1/FSPD/EP1/cmake-build-debug/CMakeFiles/rebuild_cache.dir
+/Users/robertorosmaninho/Desktop/ESCOLAS/UFMG/9˚ Período - 2022.1/FSPD/EP1/cmake-build-debug/CMakeFiles/edit_cache.dir
+/Users/robertorosmaninho/Desktop/ESCOLAS/UFMG/9˚ Período - 2022.1/FSPD/EP1/cmake-build-debug/CMakeFiles/EP1.dir
