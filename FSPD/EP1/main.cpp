@@ -6,6 +6,8 @@
 
 using namespace std;
 
+bool DEBUG = false;
+
 typedef struct {
     int pid;
     int ms;
@@ -20,7 +22,8 @@ int taskCount = 0;
 void addTask(task_descr_t* newTask) {
     pthread_mutex_lock(&mutexQueue);
 
-    //cout << "adding task " << newTask->pid << " --> Main\n";
+    if (DEBUG)
+        cout << "adding task " << newTask->pid << " -> Main\n";
     taskQueue[taskCount] = newTask;
     taskCount++;
 
@@ -37,7 +40,8 @@ task_descr_t* getTask() {
     taskCount--;
 
     //pthread_mutex_unlock(&mutexQueue);
-    //cout << "getting task " << task->pid << " ----> Child\n";
+    if (DEBUG)
+        cout << "getting task " << task->pid << " > Child\n";
     return task;
 }
 
@@ -111,25 +115,13 @@ void processa(task_descr_t* tp) {
     printf("FP #%d\n", tp->pid);
 }
 
-void mySleep(int ms) {
-    struct timespec zzz;
-    zzz.tv_sec  = ms/1000;
-    zzz.tv_nsec = (ms%1000) * 1000000L;
-    nanosleep(&zzz,NULL);
-}
-
 task_descr_t* read() {
     auto* rTask = new task_descr_t;
-    string id;
 
-    if (cin >> id >> rTask->ms) {
-        if ( id == "Z")
-            rTask->pid = -1;
-        else
-            rTask->pid = stoi(id);
-
-        //cout << "Reading task " << id << " --> Main\n";
-    return rTask;
+    if (cin >> rTask->pid >> rTask->ms) {
+        if (DEBUG)
+            cout << "Reading task " << rTask->pid << " --> Main\n";
+        return rTask;
     } else {
         return nullptr;
     }
@@ -183,9 +175,13 @@ void* thread_client(void* arg) {
 }
 int main(int argc, char *argv[]) {
     if (argc < 3) {
-        cout << "Usage ./program [min_threads] [max_threads]";
+        cout << "Usage ./program [min_threads] [max_threads] [debug = 0]";
         return 1;
     }
+
+    // Setting debug flag
+    if (argc == 4)
+        DEBUG = stoi(argv[3]);
 
     // Setting the threads configuration
     min_threads = stoi(argv[1]);
@@ -212,11 +208,15 @@ int main(int argc, char *argv[]) {
     while (task != nullptr) {
         int waiting = getThreadWaitingCount();
         int threadTotal = getThreadCount();
-        //cout << "| Waiting " << waiting << " | Current " << threadTotal << " | Max " << max_threads << "\n";
+        int tasks = queueSize();
+
+        if (DEBUG)
+            cout << "| Waiting " << waiting << " | Current " << threadTotal << " | Max " << max_threads << " | Tasks " << tasks <<"\n";
+
         if (waiting == 0 && threadTotal < max_threads) {
             long i = threadTotal;
             if (pthread_create(&threads[i], &detachedThread, &thread_client, (void*)i) != 0) {
-                perror("Failed to create thread");
+                cout << "Failed to create thread\n";
             }
             incThreadCount();
         }
@@ -224,10 +224,7 @@ int main(int argc, char *argv[]) {
         if (queueSize() >= 40)
             cout << "Fila Cheia!" << endl;
 
-        if (task->pid < 0)
-            mySleep(task->ms);
-        else
-            addTask(task);
+        addTask(task);
         task = read();
     }
 
@@ -236,5 +233,4 @@ int main(int argc, char *argv[]) {
 
     pthread_attr_destroy(&detachedThread);
     pthread_exit(0);
-    return 0;
 }
