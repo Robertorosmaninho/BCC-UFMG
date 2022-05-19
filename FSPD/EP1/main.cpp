@@ -149,9 +149,8 @@ void* thread_client(void* arg) {
 
         pthread_mutex_lock(&mutexQueue); // Lock -> Queue
 
-        while (taskCount == 0)
+        while (queueSize() == 0)
             pthread_cond_wait(&condQueue, &mutexQueue); // TODO: Devemos esperar no inicio ou no fim? Qual é melhor?
-
         task = getTask();
         pthread_mutex_unlock(&mutexQueue); // Unlock-> Queue
 
@@ -195,8 +194,9 @@ int main(int argc, char *argv[]) {
     pthread_attr_setdetachstate(&detachedThread, PTHREAD_CREATE_DETACHED);
 
     // Stating the minimum number of threads
-    for (long i = 0; i < min_threads; i++) {
-        if (pthread_create(&threads[i], &detachedThread, &thread_client, (void*)i) != 0) {
+    long id;
+    for (id = 0; id < min_threads; id++) {
+        if (pthread_create(&threads[id], &detachedThread, &thread_client, (void*)id) != 0) {
             perror("Failed to create thread");
         }
         incThreadCount();
@@ -214,10 +214,10 @@ int main(int argc, char *argv[]) {
             cout << "| Waiting " << waiting << " | Current " << threadTotal << " | Max " << max_threads << " | Tasks " << tasks <<"\n";
 
         if (waiting == 0 && threadTotal < max_threads) {
-            long i = threadTotal;
-            if (pthread_create(&threads[i], &detachedThread, &thread_client, (void*)i) != 0) {
+            if (pthread_create(&threads[id], &detachedThread, &thread_client, (void*)id) != 0) {
                 cout << "Failed to create thread\n";
             }
+            id++;
             incThreadCount();
         }
 
@@ -228,7 +228,7 @@ int main(int argc, char *argv[]) {
         task = read();
     }
 
-    while (queueSize() <= getThreadCount())
+    for(int i = 0; i < max_threads; i++) /// TODO: Teoricamente tem que que ser max_threads - threads ativas
         addTask(createEOW());
 
     pthread_attr_destroy(&detachedThread);
