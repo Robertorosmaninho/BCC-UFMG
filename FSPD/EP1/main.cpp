@@ -6,8 +6,6 @@
 
 using namespace std;
 
-bool DEBUG = false;
-
 typedef struct {
     int pid;
     int ms;
@@ -22,8 +20,6 @@ int taskCount = 0;
 void addTask(task_descr_t* newTask) {
     pthread_mutex_lock(&mutexQueue);
 
-    if (DEBUG)
-        cout << "adding task " << newTask->pid << " -> Main\n";
     taskQueue[taskCount] = newTask;
     taskCount++;
 
@@ -32,16 +28,10 @@ void addTask(task_descr_t* newTask) {
 }
 
 task_descr_t* getTask() {
-    //pthread_mutex_lock(&mutexQueue);
-    // TODO: Como o getTask já é usado quando a mutex tá travada, então não é necessário travá-la aqui
     task_descr_t *task = taskQueue[0];
     for (int i = 0; i < taskCount-1; i++)
         taskQueue[i] = taskQueue[i+1];
     taskCount--;
-
-    //pthread_mutex_unlock(&mutexQueue);
-    if (DEBUG)
-        cout << "getting task " << task->pid << " > Child\n";
     return task;
 }
 
@@ -118,13 +108,10 @@ void processa(task_descr_t* tp) {
 task_descr_t* read() {
     auto* rTask = new task_descr_t;
 
-    if (cin >> rTask->pid >> rTask->ms) {
-        if (DEBUG)
-            cout << "Reading task " << rTask->pid << " --> Main\n";
+    if (cin >> rTask->pid >> rTask->ms)
         return rTask;
-    } else {
+    else
         return nullptr;
-    }
 }
 
 task_descr_t* createEOW() {
@@ -149,8 +136,9 @@ void* thread_client(void* arg) {
 
         pthread_mutex_lock(&mutexQueue); // Lock -> Queue
 
-        while (queueSize() == 0)
-            pthread_cond_wait(&condQueue, &mutexQueue); // TODO: Devemos esperar no inicio ou no fim? Qual é melhor?
+        while (taskCount == 0)
+            pthread_cond_wait(&condQueue, &mutexQueue);
+
         task = getTask();
         pthread_mutex_unlock(&mutexQueue); // Unlock-> Queue
 
@@ -174,13 +162,9 @@ void* thread_client(void* arg) {
 }
 int main(int argc, char *argv[]) {
     if (argc < 3) {
-        cout << "Usage ./program [min_threads] [max_threads] [debug = 0]";
+        cout << "Usage ./program [min_threads] [max_threads]";
         return 1;
     }
-
-    // Setting debug flag
-    if (argc == 4)
-        DEBUG = stoi(argv[3]);
 
     // Setting the threads configuration
     min_threads = stoi(argv[1]);
@@ -206,14 +190,7 @@ int main(int argc, char *argv[]) {
     task_descr_t *task = read();
 
     while (task != nullptr) {
-        int waiting = getThreadWaitingCount();
-        int threadTotal = getThreadCount();
-        int tasks = queueSize();
-
-        if (DEBUG)
-            cout << "| Waiting " << waiting << " | Current " << threadTotal << " | Max " << max_threads << " | Tasks " << tasks <<"\n";
-
-        if (waiting == 0 && threadTotal < max_threads) {
+        if (getThreadWaitingCount() == 0 && getThreadCount() < max_threads) {
             if (pthread_create(&threads[id], &detachedThread, &thread_client, (void*)id) != 0) {
                 cout << "Failed to create thread\n";
             }
@@ -228,7 +205,7 @@ int main(int argc, char *argv[]) {
         task = read();
     }
 
-    for(int i = 0; i < max_threads; i++) /// TODO: Teoricamente tem que que ser max_threads - threads ativas
+    for(int i = 0; i < max_threads; i++)
         addTask(createEOW());
 
     pthread_attr_destroy(&detachedThread);
