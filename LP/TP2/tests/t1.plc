@@ -1,0 +1,6 @@
+var x = 2 + 2;
+var z = x + 3;
+
+print x;
+print z;
+print (z + x)
