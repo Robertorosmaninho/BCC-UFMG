@@ -1,0 +1,29 @@
+
+syntax = "proto3";
+
+service Store {
+    rpc Price (PriceRequest) returns (PriceReply) {}
+    rpc Sell  (SellRequest) returns (SellReply) {}
+    rpc CloseStore (CloseStoreRequest) returns (CloseStoreReply) {}
+}
+
+
+message PriceRequest { }
+
+message PriceReply {
+    int32 price = 1;
+}
+
+message SellRequest {
+    bytes order = 1;
+}
+
+message SellReply {
+    int32 returnValueOrCode = 1;
+}
+
+message CloseStoreRequest { }
+
+message CloseStoreReply {
+    int32 storeBalance = 1;
+}

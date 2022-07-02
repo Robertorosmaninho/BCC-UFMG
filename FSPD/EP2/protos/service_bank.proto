@@ -1,0 +1,43 @@
+
+syntax = "proto3";
+
+service Bank {
+    rpc Balance (BalanceRequest) returns (BalanceReply) {}
+    rpc PaymentOrder (PaymentOrderRequest) returns (PaymentOrderReply) {}
+    rpc Transaction (TransactionRequest) returns (TransactionReply) {}
+    rpc CloseBank (CloseBankRequest) returns (CloseBankReply) {}
+}
+
+message BalanceRequest {
+    string wallet = 1;
+}
+
+message BalanceReply {
+    int32 amount = 1;
+}
+
+message PaymentOrderRequest {
+    string wallet = 1;
+    int32 amount = 2;
+}
+
+message PaymentOrderReply {
+    int32 resultCode = 1;
+    bytes order = 2;
+}
+
+message TransactionRequest {
+    int32 amount = 1;
+    bytes order = 2;
+    string wallet = 3;
+}
+
+message TransactionReply {
+    int32 returnValueOrCode = 1;
+}
+
+message CloseBankRequest { }
+
+message CloseBankReply {
+    int32 savedAccounts = 1;
+}
