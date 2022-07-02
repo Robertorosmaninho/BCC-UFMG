@@ -12,6 +12,6 @@ run_cli_loja: stubs
 	python3 src/client_store.py $(arg1) $(arg2) $(arg3)
 
 clean:
-	rm src/service_bank_pb2.py src/service_bank_pb2_grpc.py
-	rm src/service_store_pb2.py src/service_store_pb2_grpc.py
-	rm -r src/__pycache__
+	rm -f src/service_bank_pb2.py src/service_bank_pb2_grpc.py
+	rm -f src/service_store_pb2.py src/service_store_pb2_grpc.py
+	rm -f -r src/__pycache__
